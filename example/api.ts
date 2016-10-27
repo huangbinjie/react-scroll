@@ -1,7 +1,7 @@
 function* dataGenerator() {
   let index = 0
   while (true) {
-    const arr = []
+    const arr: number[] = []
     for (let i = 50; i--;) {
       arr.push(index++)
     }
