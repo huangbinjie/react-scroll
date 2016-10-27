@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "module": "commonjs",
+    "noEmit": true,
+    "types": [
+      "es6-shim"
+    ],
+    "sourceMap": true,
+    "target": "es6"
+  }
+}
