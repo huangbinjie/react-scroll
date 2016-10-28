@@ -1,8 +1,8 @@
 {
   "name": "react-iscroller",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "an infinite scroll container for react",
-  "main": "index.js",
+  "main": "dist/infinite_scroll.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
