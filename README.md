@@ -1,2 +1,2 @@
 # react-scroll
-A infinite scroll container for react
+An infinite scroll container for react

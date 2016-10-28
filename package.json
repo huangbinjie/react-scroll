@@ -1,7 +1,7 @@
 {
-  "name": "react-scroll",
+  "name": "react-scroller",
   "version": "1.0.0",
-  "description": "a infinite scroll container for react",
+  "description": "an infinite scroll container for react",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
