@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { findDOMNode } from 'react-dom'
-import Spinner from './animations/spinner'
 
 export interface Props {
   onEnd: Function
@@ -43,10 +42,11 @@ export default class InifiteScroll extends React.Component<Props, State> {
     this.setState({ display: "none" })
   }
   public render() {
+    const Animation = this.props.animation
     return (
       <ul className={this.props.className} onClick={this.props.onClick}>
         {this.props.children}
-        {this.props.animation}
+        {Animation && <Animation display={this.state.display} />}
       </ul>
     )
   }

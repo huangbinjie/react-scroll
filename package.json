@@ -1,5 +1,5 @@
 {
-  "name": "react-scroller",
+  "name": "react-iscroller",
   "version": "1.0.0",
   "description": "an infinite scroll container for react",
   "main": "index.js",
@@ -26,5 +26,6 @@
     "@types/react-dom": "^0.14.18",
     "react": "^15.3.2",
     "react-dom": "^15.3.2"
-  }
+  },
+  "typings": "dist/infinite_scroll.d.ts"
 }

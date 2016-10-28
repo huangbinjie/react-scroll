@@ -21485,9 +21485,10 @@
 	        this.setState({ display: "none" });
 	    }
 	    render() {
+	        const Animation = this.props.animation;
 	        return (React.createElement("ul", {className: this.props.className, onClick: this.props.onClick}, 
 	            this.props.children, 
-	            this.props.animation));
+	            Animation && React.createElement(Animation, {display: this.state.display})));
 	    }
 	}
 	InifiteScroll.defaultProps = {
