@@ -1,8 +1,8 @@
 import * as React from 'react'
 
-import Scroll from '../src/infinite_scroll'
+import Scroll from '../../src/infinite_scroll'
 
-// import { fetchData } from './api'
+import { fetchData } from './api'
 
 type State = {
   lis: number[]
@@ -18,6 +18,6 @@ class App extends React.Component<any, State> {
     )
   }
   private onend = () => {
-    // fetchData().then(list => this.setState({ lis: this.state.lis.concat(list) }))
+    fetchData().then(list => this.setState({ lis: this.state.lis.concat(list) }))
   }
 }

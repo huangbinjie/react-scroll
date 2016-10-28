@@ -42,9 +42,10 @@ var InifiteScroll = (function (_super) {
         this.setState({ display: "none" });
     };
     InifiteScroll.prototype.render = function () {
-        return (React.createElement("ul", {className: this.props.className, onClick: this.props.onClick}, 
-            this.props.children, 
-            this.props.animation));
+        return (<ul className={this.props.className} onClick={this.props.onClick}>
+        {this.props.children}
+        {this.props.animation}
+      </ul>);
     };
     InifiteScroll.defaultProps = {
         onEnd: function () { },
@@ -55,6 +56,5 @@ var InifiteScroll = (function (_super) {
     };
     return InifiteScroll;
 }(React.Component));
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = InifiteScroll;
-//# sourceMappingURL=infinite_scroll.js.map
+exports.__esModule = true;
+exports["default"] = InifiteScroll;

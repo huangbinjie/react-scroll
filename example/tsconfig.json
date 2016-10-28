@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "module": "commonjs",
+    "sourceMap": true,
+    "target": "es6",
+    "declaration": true,
+    "outDir": "./dist"
+  },
+  "exclude": [
+    "../src"
+  ],
+  "include": [
+    "src/*"
+  ]
+}
