@@ -12,5 +12,8 @@ function* dataGenerator() {
 const gen = dataGenerator()
 
 export const fetchData = (): Promise<[number]> => new Promise((resolve, reject) => {
-  setTimeout(() => resolve(gen.next().value), 1000)
+  setTimeout(() => {
+    console.log("this is a request")
+    resolve(gen.next().value)
+  }, 1000)
 })

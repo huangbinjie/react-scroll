@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "ts-loader": "^0.9.5",
+    "webpack": "^1.13.3"
+  }
+}
