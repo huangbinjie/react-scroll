@@ -6,7 +6,6 @@ export interface Props {
   onClick?: () => void
   children?: [React.ReactChildren]
   className?: string
-  sizeToLoad?: number
   bindingDOM?: HTMLElement | Document
   animation?: React.ComponentClass<State>
 }
@@ -20,7 +19,6 @@ export default class InifiteScroll extends React.Component<Props, State> {
     onEnd: () => { },
     onClick: () => { },
     className: "",
-    sizeToLoad: window.innerHeight * 2,
     bindingDOM: document
   }
   public state: State = { display: "none" }
@@ -54,7 +52,7 @@ export default class InifiteScroll extends React.Component<Props, State> {
   private nativeDOM: Element
   private scrollHandle = () => {
     const rectData = this.nativeDOM.getBoundingClientRect()
-    if (rectData.bottom < this.props.sizeToLoad) {
+    if (rectData.bottom < window.innerHeight * 2) {
       if (this.shouldUpdate && this.props.children[0]) {
         this.setState({ display: "block" })
         this.props.onEnd()

@@ -58,10 +58,6 @@ Same as react onClick
 
 Same as react className
 
-### sizeToLoad?: number
-
-Tell container when to update and then call onEnd function. default to `window.innerHeight * 2`.
-
 ### bindingDOM?: HTMLElement
 
 A native dom that container will regist `scroll` event to it. default to `document`.
