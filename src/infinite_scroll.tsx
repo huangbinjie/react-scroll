@@ -2,7 +2,7 @@ import * as React from 'react'
 import { findDOMNode } from 'react-dom'
 import Spinner from './animations/spinner'
 
-interface Props {
+export interface Props {
   onEnd: Function
   onClick?: () => void
   children?: [React.ReactChildren]
@@ -12,7 +12,7 @@ interface Props {
   animation?: React.ComponentClass<State>
 }
 
-interface State {
+export interface State {
   display: 'none' | 'block'
 }
 

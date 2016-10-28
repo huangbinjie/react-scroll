@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/huangbinjie/react-scroll#readme",
   "dependencies": {
-    "@types/es6-shim": "^0.31.32",
     "@types/react": "^0.14.42",
     "@types/react-dom": "^0.14.18",
     "react": "^15.3.2",
