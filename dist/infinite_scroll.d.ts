@@ -5,7 +5,6 @@ export interface Props {
     onClick?: () => void;
     children?: [React.ReactChildren];
     className?: string;
-    sizeToLoad?: number;
     bindingDOM?: HTMLElement | Document;
     animation?: React.ComponentClass<State>;
 }

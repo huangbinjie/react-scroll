@@ -1,6 +1,6 @@
 {
   "name": "react-iscroller",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "an infinite scroll container for react",
   "main": "dist/infinite_scroll.js",
   "scripts": {

@@ -1,30 +1,37 @@
 "use strict";
-const React = require('react');
-const react_dom_1 = require('react-dom');
-class InifiteScroll extends React.Component {
-    constructor() {
-        super(...arguments);
-        this.state = { display: "none" };
-        this.shouldUpdate = true;
-        this.scrollHandle = () => {
-            const rectData = this.nativeDOM.getBoundingClientRect();
-            if (rectData.bottom < this.props.sizeToLoad) {
-                if (this.shouldUpdate && this.props.children[0]) {
-                    this.setState({ display: "block" });
-                    this.props.onEnd();
-                    this.shouldUpdate = false;
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var React = require("react");
+var react_dom_1 = require("react-dom");
+var InifiteScroll = (function (_super) {
+    __extends(InifiteScroll, _super);
+    function InifiteScroll() {
+        var _this = _super.apply(this, arguments) || this;
+        _this.state = { display: "none" };
+        _this.shouldUpdate = true;
+        _this.scrollHandle = function () {
+            var rectData = _this.nativeDOM.getBoundingClientRect();
+            if (rectData.bottom < window.innerHeight * 2) {
+                if (_this.shouldUpdate && _this.props.children[0]) {
+                    _this.setState({ display: "block" });
+                    _this.props.onEnd();
+                    _this.shouldUpdate = false;
                 }
             }
         };
+        return _this;
     }
-    componentDidMount() {
+    InifiteScroll.prototype.componentDidMount = function () {
         this.nativeDOM = react_dom_1.findDOMNode(this);
         this.props.bindingDOM.addEventListener("scroll", this.scrollHandle);
-    }
-    componentWillUnmount() {
+    };
+    InifiteScroll.prototype.componentWillUnmount = function () {
         this.props.bindingDOM.removeEventListener("scroll", this.scrollHandle);
-    }
-    componentWillReceiveProps(nextProps) {
+    };
+    InifiteScroll.prototype.componentWillReceiveProps = function (nextProps) {
         if (nextProps.children == void 0 || this.props.children == void 0) {
             this.setState({ display: "none" });
             return;
@@ -33,19 +40,19 @@ class InifiteScroll extends React.Component {
             this.shouldUpdate = true;
         }
         this.setState({ display: "none" });
-    }
-    render() {
-        const Animation = this.props.animation;
-        return (React.createElement("ul", {className: this.props.className, onClick: this.props.onClick}, 
-            this.props.children, 
-            Animation && React.createElement(Animation, {display: this.state.display})));
-    }
-}
+    };
+    InifiteScroll.prototype.render = function () {
+        var Animation = this.props.animation;
+        return (React.createElement("ul", { className: this.props.className, onClick: this.props.onClick },
+            this.props.children,
+            Animation && React.createElement(Animation, { display: this.state.display })));
+    };
+    return InifiteScroll;
+}(React.Component));
 InifiteScroll.defaultProps = {
-    onEnd: () => { },
-    onClick: () => { },
+    onEnd: function () { },
+    onClick: function () { },
     className: "",
-    sizeToLoad: window.innerHeight * 2,
     bindingDOM: document
 };
 Object.defineProperty(exports, "__esModule", { value: true });
