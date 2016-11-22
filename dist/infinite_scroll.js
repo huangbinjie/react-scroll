@@ -26,10 +26,15 @@ var InifiteScroll = (function (_super) {
     }
     InifiteScroll.prototype.componentDidMount = function () {
         this.nativeDOM = react_dom_1.findDOMNode(this);
-        this.props.bindingDOM.addEventListener("scroll", this.scrollHandle);
+        var scrollDOM = this.props.scrollDOM();
+        if (scrollDOM instanceof Element || scrollDOM instanceof HTMLDocument)
+            this.parentDOM = scrollDOM;
+        else
+            this.parentDOM = document;
+        this.parentDOM.addEventListener("scroll", this.scrollHandle);
     };
     InifiteScroll.prototype.componentWillUnmount = function () {
-        this.props.bindingDOM.removeEventListener("scroll", this.scrollHandle);
+        this.parentDOM.removeEventListener("scroll", this.scrollHandle);
     };
     InifiteScroll.prototype.componentWillReceiveProps = function (nextProps) {
         if (nextProps.children == void 0 || this.props.children == void 0) {
@@ -49,12 +54,11 @@ var InifiteScroll = (function (_super) {
     };
     return InifiteScroll;
 }(React.Component));
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = InifiteScroll;
 InifiteScroll.defaultProps = {
     onEnd: function () { },
     onClick: function () { },
-    className: "",
-    bindingDOM: document
+    className: ""
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = InifiteScroll;
 //# sourceMappingURL=infinite_scroll.js.map

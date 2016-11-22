@@ -6,7 +6,7 @@ export interface Props {
   onClick?: () => void
   children?: [React.ReactChildren]
   className?: string
-  bindingDOM?: HTMLElement | Document
+  scrollDOM?: () => Element | HTMLDocument
   animation?: React.ComponentClass<State>
 }
 
@@ -18,16 +18,22 @@ export default class InifiteScroll extends React.Component<Props, State> {
   static defaultProps: Props = {
     onEnd: () => { },
     onClick: () => { },
-    className: "",
-    bindingDOM: document
+    className: ""
   }
   public state: State = { display: "none" }
   public componentDidMount() {
     this.nativeDOM = findDOMNode(this)
-    this.props.bindingDOM.addEventListener("scroll", this.scrollHandle)
+    const scrollDOM = this.props.scrollDOM()
+
+    if (scrollDOM instanceof Element || scrollDOM instanceof HTMLDocument)
+      this.parentDOM = scrollDOM
+    else
+      this.parentDOM = document
+
+    this.parentDOM.addEventListener("scroll", this.scrollHandle)
   }
   public componentWillUnmount() {
-    this.props.bindingDOM.removeEventListener("scroll", this.scrollHandle)
+    this.parentDOM.removeEventListener("scroll", this.scrollHandle)
   }
   public componentWillReceiveProps(nextProps: Props) {
     if (nextProps.children == void 0 || this.props.children == void 0) {
@@ -50,6 +56,7 @@ export default class InifiteScroll extends React.Component<Props, State> {
   }
   private shouldUpdate = true
   private nativeDOM: Element
+  private parentDOM: Element | HTMLElement | HTMLDocument
   private scrollHandle = () => {
     const rectData = this.nativeDOM.getBoundingClientRect()
     if (rectData.bottom < window.innerHeight * 2) {

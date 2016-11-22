@@ -5,7 +5,7 @@ export interface Props {
     onClick?: () => void;
     children?: [React.ReactChildren];
     className?: string;
-    bindingDOM?: HTMLElement | Document;
+    scrollDOM?: () => Element | HTMLDocument;
     animation?: React.ComponentClass<State>;
 }
 export interface State {
@@ -20,5 +20,6 @@ export default class InifiteScroll extends React.Component<Props, State> {
     render(): JSX.Element;
     private shouldUpdate;
     private nativeDOM;
+    private parentDOM;
     private scrollHandle;
 }

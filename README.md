@@ -58,9 +58,9 @@ Same as react onClick
 
 Same as react className
 
-### bindingDOM?: HTMLElement
+### scrollDOM?: () => Element || Document
 
-A native dom that container will regist `scroll` event to it. default to `document`.
+A function return native dom then the scroll container will regist `scroll` event to it. default to `document`.
 
 ### animation?: React.ComponentClass
 
