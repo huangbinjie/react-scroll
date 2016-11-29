@@ -26,7 +26,7 @@ var InifiteScroll = (function (_super) {
     }
     InifiteScroll.prototype.componentDidMount = function () {
         this.nativeDOM = react_dom_1.findDOMNode(this);
-        var scrollDOM = this.props.scrollDOM();
+        var scrollDOM = this.props.scrollDOM ? this.props.scrollDOM() : null;
         if (scrollDOM instanceof Element || scrollDOM instanceof HTMLDocument)
             this.parentDOM = scrollDOM;
         else

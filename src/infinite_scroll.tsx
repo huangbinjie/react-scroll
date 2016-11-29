@@ -23,7 +23,7 @@ export default class InifiteScroll extends React.Component<Props, State> {
   public state: State = { display: "none" }
   public componentDidMount() {
     this.nativeDOM = findDOMNode(this)
-    const scrollDOM = this.props.scrollDOM()
+    const scrollDOM = this.props.scrollDOM ? this.props.scrollDOM() : null
 
     if (scrollDOM instanceof Element || scrollDOM instanceof HTMLDocument)
       this.parentDOM = scrollDOM
