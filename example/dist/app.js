@@ -52,6 +52,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+	Object.defineProperty(exports, "__esModule", { value: true });
 	const React = __webpack_require__(2);
 	const react_dom_1 = __webpack_require__(35);
 	const infinite_scroll_1 = __webpack_require__(173);
@@ -68,10 +69,9 @@
 	        api_1.fetchData().then(list => this.setState({ lis: list }));
 	    }
 	    render() {
-	        const lis = this.state.lis.map((n, i) => React.createElement("li", {key: i, style: { height: "20px", lineHeight: "20px" }}, n));
-	        return (React.createElement("div", null, 
-	            React.createElement(infinite_scroll_1.default, {onEnd: this.onend}, lis)
-	        ));
+	        const lis = this.state.lis.map((n, i) => React.createElement("li", { key: i, style: { height: "20px", lineHeight: "20px" } }, n));
+	        return (React.createElement("div", null,
+	            React.createElement(infinite_scroll_1.default, { onEnd: this.onend }, lis)));
 	    }
 	}
 	react_dom_1.render(React.createElement(App, null), document.getElementById("root"));
@@ -21449,6 +21449,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+	Object.defineProperty(exports, "__esModule", { value: true });
 	const React = __webpack_require__(2);
 	const react_dom_1 = __webpack_require__(35);
 	class InifiteScroll extends React.Component {
@@ -21458,7 +21459,7 @@
 	        this.shouldUpdate = true;
 	        this.scrollHandle = () => {
 	            const rectData = this.nativeDOM.getBoundingClientRect();
-	            if (rectData.bottom < this.props.sizeToLoad) {
+	            if (rectData.bottom < window.innerHeight * 2) {
 	                if (this.shouldUpdate && this.props.children[0]) {
 	                    this.setState({ display: "block" });
 	                    this.props.onEnd();
@@ -21469,10 +21470,15 @@
 	    }
 	    componentDidMount() {
 	        this.nativeDOM = react_dom_1.findDOMNode(this);
-	        this.props.bindingDOM.addEventListener("scroll", this.scrollHandle);
+	        const scrollDOM = this.props.scrollDOM ? this.props.scrollDOM() : null;
+	        if (scrollDOM instanceof Element || scrollDOM instanceof HTMLDocument)
+	            this.parentDOM = scrollDOM;
+	        else
+	            this.parentDOM = document;
+	        this.parentDOM.addEventListener("scroll", this.scrollHandle);
 	    }
 	    componentWillUnmount() {
-	        this.props.bindingDOM.removeEventListener("scroll", this.scrollHandle);
+	        this.parentDOM.removeEventListener("scroll", this.scrollHandle);
 	    }
 	    componentWillReceiveProps(nextProps) {
 	        if (nextProps.children == void 0 || this.props.children == void 0) {
@@ -21486,19 +21492,16 @@
 	    }
 	    render() {
 	        const Animation = this.props.animation;
-	        return (React.createElement("ul", {className: this.props.className, onClick: this.props.onClick}, 
-	            this.props.children, 
-	            Animation && React.createElement(Animation, {display: this.state.display})));
+	        return (React.createElement("ul", { className: this.props.className, onClick: this.props.onClick },
+	            this.props.children,
+	            Animation && React.createElement(Animation, { display: this.state.display })));
 	    }
 	}
 	InifiteScroll.defaultProps = {
 	    onEnd: () => { },
 	    onClick: () => { },
-	    className: "",
-	    sizeToLoad: window.innerHeight * 2,
-	    bindingDOM: document
+	    className: ""
 	};
-	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.default = InifiteScroll;
 
 
@@ -21507,6 +21510,7 @@
 /***/ function(module, exports) {
 
 	"use strict";
+	Object.defineProperty(exports, "__esModule", { value: true });
 	function* dataGenerator() {
 	    let index = 0;
 	    while (true) {
