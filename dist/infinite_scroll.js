@@ -1,15 +1,21 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
 var react_dom_1 = require("react-dom");
 var InifiteScroll = (function (_super) {
     __extends(InifiteScroll, _super);
     function InifiteScroll() {
-        var _this = _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.state = { display: "none" };
         _this.shouldUpdate = true;
         _this.scrollHandle = function () {
@@ -52,13 +58,12 @@ var InifiteScroll = (function (_super) {
             this.props.children,
             Animation && React.createElement(Animation, { display: this.state.display })));
     };
+    InifiteScroll.defaultProps = {
+        onEnd: function () { },
+        onClick: function () { },
+        className: ""
+    };
     return InifiteScroll;
 }(React.Component));
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = InifiteScroll;
-InifiteScroll.defaultProps = {
-    onEnd: function () { },
-    onClick: function () { },
-    className: ""
-};
 //# sourceMappingURL=infinite_scroll.js.map

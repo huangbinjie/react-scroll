@@ -1,6 +1,6 @@
 {
   "name": "react-iscroller",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "an infinite scroll container for react",
   "main": "dist/infinite_scroll.js",
   "scripts": {
@@ -21,9 +21,11 @@
     "url": "https://github.com/huangbinjie/react-scroll/issues"
   },
   "homepage": "https://github.com/huangbinjie/react-scroll#readme",
-  "dependencies": {
-    "@types/react": "^15.0.20",
-    "@types/react-dom": "^0.14.23",
+  "devDependencies": {
+    "@types/react": "^15.6.1",
+    "@types/react-dom": "^0.14.23"
+  },
+  "peerDependencies": {
     "react": "^15.3.2",
     "react-dom": "^15.3.2"
   },
