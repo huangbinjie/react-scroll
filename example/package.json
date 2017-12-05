@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@types/shortid": "0.0.29",
+    "shortid": "^2.2.8",
     "ts-loader": "^0.9.5",
     "webpack": "^1.13.3"
   }

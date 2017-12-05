@@ -6,24 +6,23 @@ import Scroll from '../../src/infinite_scroll'
 import { fetchData } from './api'
 
 type State = {
-  lis: number[]
+  messages: { id: string, content: string }[]
 }
 
-class App extends React.Component<any, State> {
-  state: State = { lis: [] }
+
+class App extends React.Component<{}, State> {
+  state: State = { messages: [] }
   componentDidMount() {
-    fetchData().then(list => this.setState({ lis: list }))
+    fetchData().then(messages => this.setState({ messages }))
   }
   render() {
-    const lis = this.state.lis.map((n, i) => <li key={i} style={{ height: "20px", lineHeight: "20px" }}>{n}</li>)
     return (
-      <div>
-        <Scroll onEnd={this.onend}>{lis}</Scroll>
-      </div>
+      <Scroll averageHeight={23} items={this.state.messages} onRenderCell={this.renderCell} />
     )
   }
-  private onend = () => {
-    fetchData().then(list => this.setState({ lis: this.state.lis.concat(list) }))
+
+  renderCell(item: any, index: number) {
+    return <li key={index}>{index}, {item.content}</li>
   }
 }
 

@@ -22,12 +22,14 @@
   },
   "homepage": "https://github.com/huangbinjie/react-scroll#readme",
   "devDependencies": {
-    "@types/react": "^15.6.1",
-    "@types/react-dom": "^0.14.23"
+    "@types/react": "^16.0.25",
+    "@types/react-dom": "^16.0.3",
+    "react": "^16.1.1",
+    "react-dom": "^16.1.1"
   },
   "peerDependencies": {
-    "react": "^15.3.2",
-    "react-dom": "^15.3.2"
+    "react": "^16.1.1",
+    "react-dom": "^16.1.1"
   },
   "typings": "dist/infinite_scroll.d.ts"
 }

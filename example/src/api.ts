@@ -1,19 +1,8 @@
-function* dataGenerator() {
-  let index = 0
-  while (true) {
-    const arr: number[] = []
-    for (let i = 50; i--;) {
-      arr.push(index++)
-    }
-    yield arr
-  }
+import { MESSAGES } from "./message"
+import { generate } from "shortid"
+
+export function fetchData() {
+  const maxLength = MESSAGES.length
+  const responseData = Array(1000).fill(0).map(() => ({ id: generate(), content: MESSAGES[Math.round(Math.random() * MESSAGES.length)] }))
+  return Promise.resolve(responseData)
 }
-
-const gen = dataGenerator()
-
-export const fetchData = (): Promise<[number]> => new Promise((resolve, reject) => {
-  setTimeout(() => {
-    console.log("this is a request")
-    resolve(gen.next().value)
-  }, 1000)
-})
