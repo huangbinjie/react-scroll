@@ -1,28 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = require("react");
+const projector_1 = require("./projector");
 class InifiteScroll extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { sample: [], underContentPlaceholderHeight: 0, uponContentPlaceholderHeight: 0 };
-        this.topAnchorIndex = 0;
-        this.bottomAnchorIndex = 0;
-        this.shouldUpdate = true;
-        this.guestimatedItemCountPerPage = 10;
-        this.cachedItemRect = [];
+    constructor() {
+        super(...arguments);
+        this.state = { projectedItems: [], underContentPlaceholderHeight: 0, uponContentPlaceholderHeight: 0 };
         this.scrollTop = 0;
-        this.anchorScrollTop = 0;
         this.createChild = (item, index) => {
             const parent = this;
             return class Child extends React.Component {
                 componentDidMount() {
-                    if (!parent.cachedItemRect[index]) {
+                    const cachedItemRect = parent.projector.cachedItemRect;
+                    if (!cachedItemRect[index]) {
                         const child = this.refs.child;
                         const rect = child.getBoundingClientRect();
-                        const prevItem = parent.cachedItemRect[index - 1];
+                        const prevItem = cachedItemRect[index - 1];
                         const bottom = prevItem ? prevItem.bottom + rect.height : rect.bottom;
                         const top = prevItem ? prevItem.bottom : rect.top;
-                        parent.cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
+                        cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
                     }
                 }
                 render() {
@@ -31,60 +27,31 @@ class InifiteScroll extends React.Component {
             };
         };
         this.onScroll = () => {
-            const anchorRect = this.cachedItemRect[this.topAnchorIndex];
-            const beforeAnchorRect = this.cachedItemRect[this.topAnchorIndex - 1];
             const newScrollTop = this.divDom.scrollTop;
-            const offsetTop = this.divDom.offsetTop;
-            const delta = newScrollTop - this.anchorScrollTop;
             if (newScrollTop < this.scrollTop) {
-                if (!beforeAnchorRect)
-                    return;
-                if (delta * -1 > beforeAnchorRect.height) {
-                    const bottom = beforeAnchorRect.bottom + delta;
-                    const itemIndex = this.cachedItemRect.findIndex(item => item.top > bottom);
-                    this.bottomAnchorIndex += itemIndex - this.topAnchorIndex;
-                    this.topAnchorIndex = itemIndex;
-                    this.anchorScrollTop = this.cachedItemRect[itemIndex].top - offsetTop;
-                    this.project(this.props.items, this.props.averageHeight);
-                }
+                this.projector.down();
             }
             else {
-                if (delta > anchorRect.height) {
-                    const bottom = anchorRect.top + delta;
-                    const itemIndex = this.cachedItemRect.findIndex(item => item.bottom > bottom);
-                    this.bottomAnchorIndex += itemIndex - this.topAnchorIndex;
-                    this.topAnchorIndex = itemIndex;
-                    this.anchorScrollTop = this.cachedItemRect[itemIndex].top - offsetTop;
-                    this.project(this.props.items, this.props.averageHeight);
-                }
+                this.projector.up();
             }
             this.scrollTop = newScrollTop;
         };
-        this.project = (items, averageHeight) => {
-            const isTopEnoughThree = this.topAnchorIndex > 2;
-            const startIndex = isTopEnoughThree ? this.topAnchorIndex - 3 : 0;
-            const sample = items.slice(startIndex, this.bottomAnchorIndex + 1);
-            const uponContentPlaceholderHeight = isTopEnoughThree ? this.cachedItemRect[this.topAnchorIndex - 3].top - this.divDom.offsetTop : 0;
-            this.setState({ sample, uponContentPlaceholderHeight });
-        };
     }
     componentWillReceiveProps(nextProps) {
-        this.project(nextProps.items, nextProps.averageHeight);
+        this.projector.next(nextProps.items);
     }
     componentDidUpdate() {
-        const cachedItemRectLength = this.cachedItemRect.length;
-        const unCachedItemCount = this.props.items.length - cachedItemRectLength;
-        const underContentPlaceholderHeight = cachedItemRectLength > 0 ? this.cachedItemRect[cachedItemRectLength - 1].bottom - this.cachedItemRect[this.bottomAnchorIndex].bottom + unCachedItemCount * this.props.averageHeight : 0;
-        this.underContentDivDom.style.height = underContentPlaceholderHeight + "px";
     }
     componentDidMount() {
-        this.guestimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / this.props.averageHeight);
-        this.bottomAnchorIndex = this.topAnchorIndex + Math.round(this.guestimatedItemCountPerPage * 1.5) - 1;
+        this.projector = new projector_1.Projector(this.divDom, this.props.items, this.props.averageHeight);
+        this.projector.subscribe((projectedItems, uponContentPlaceholderHeight) => {
+            this.setState({ projectedItems, uponContentPlaceholderHeight });
+        });
     }
     render() {
         return (React.createElement("div", { id: "c", ref: div => this.divDom = div, style: { overflow: "scroll", boxSizing: "border-box", height: "100%" }, onScroll: this.onScroll },
             React.createElement("div", { style: { height: this.state.uponContentPlaceholderHeight } }),
-            this.state.sample.map((item, index) => React.createElement(this.createChild(item, (this.topAnchorIndex > 3 ? this.topAnchorIndex - 3 : 0) + index), { key: item.id })),
+            this.state.projectedItems.map((item, index) => React.createElement(this.createChild(item, this.projector.startIndex + index), { key: this.props.key ? item[this.props.key] : index })),
             React.createElement("div", { ref: div => this.underContentDivDom = div })));
     }
 }

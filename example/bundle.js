@@ -438,7 +438,7 @@ module.exports = emptyObject;
 "use strict";
 
 
-var randomFromSeed = __webpack_require__(34);
+var randomFromSeed = __webpack_require__(35);
 
 var ORIGINAL = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
 var alphabet;
@@ -1045,7 +1045,7 @@ module.exports = focusNode;
 "use strict";
 
 
-var randomByte = __webpack_require__(35);
+var randomByte = __webpack_require__(36);
 
 function encode(lookup, number) {
     var loopCounter = 0;
@@ -1074,7 +1074,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(2);
 const react_dom_1 = __webpack_require__(20);
 const infinite_scroll_1 = __webpack_require__(29);
-const api_1 = __webpack_require__(30);
+const api_1 = __webpack_require__(31);
 class App extends React.Component {
     constructor() {
         super(...arguments);
@@ -18403,28 +18403,24 @@ module.exports = camelize;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(2);
+const projector_1 = __webpack_require__(30);
 class InifiteScroll extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { sample: [], underContentPlaceholderHeight: 0, uponContentPlaceholderHeight: 0 };
-        this.topAnchorIndex = 0;
-        this.bottomAnchorIndex = 0;
-        this.shouldUpdate = true;
-        this.guestimatedItemCountPerPage = 10;
-        this.cachedItemRect = [];
+    constructor() {
+        super(...arguments);
+        this.state = { projectedItems: [], underContentPlaceholderHeight: 0, uponContentPlaceholderHeight: 0 };
         this.scrollTop = 0;
-        this.anchorScrollTop = 0;
         this.createChild = (item, index) => {
             const parent = this;
             return class Child extends React.Component {
                 componentDidMount() {
-                    if (!parent.cachedItemRect[index]) {
+                    const cachedItemRect = parent.projector.cachedItemRect;
+                    if (!cachedItemRect[index]) {
                         const child = this.refs.child;
                         const rect = child.getBoundingClientRect();
-                        const prevItem = parent.cachedItemRect[index - 1];
+                        const prevItem = cachedItemRect[index - 1];
                         const bottom = prevItem ? prevItem.bottom + rect.height : rect.bottom;
                         const top = prevItem ? prevItem.bottom : rect.top;
-                        parent.cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
+                        cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
                     }
                 }
                 render() {
@@ -18433,60 +18429,31 @@ class InifiteScroll extends React.Component {
             };
         };
         this.onScroll = () => {
-            const anchorRect = this.cachedItemRect[this.topAnchorIndex];
-            const beforeAnchorRect = this.cachedItemRect[this.topAnchorIndex - 1];
             const newScrollTop = this.divDom.scrollTop;
-            const offsetTop = this.divDom.offsetTop;
-            const delta = newScrollTop - this.anchorScrollTop;
             if (newScrollTop < this.scrollTop) {
-                if (!beforeAnchorRect)
-                    return;
-                if (delta * -1 > beforeAnchorRect.height) {
-                    const bottom = beforeAnchorRect.bottom + delta;
-                    const itemIndex = this.cachedItemRect.findIndex(item => item.top > bottom);
-                    this.bottomAnchorIndex += itemIndex - this.topAnchorIndex;
-                    this.topAnchorIndex = itemIndex;
-                    this.anchorScrollTop = this.cachedItemRect[itemIndex].top - offsetTop;
-                    this.project(this.props.items, this.props.averageHeight);
-                }
+                this.projector.down();
             }
             else {
-                if (delta > anchorRect.height) {
-                    const bottom = anchorRect.top + delta;
-                    const itemIndex = this.cachedItemRect.findIndex(item => item.bottom > bottom);
-                    this.bottomAnchorIndex += itemIndex - this.topAnchorIndex;
-                    this.topAnchorIndex = itemIndex;
-                    this.anchorScrollTop = this.cachedItemRect[itemIndex].top - offsetTop;
-                    this.project(this.props.items, this.props.averageHeight);
-                }
+                this.projector.up();
             }
             this.scrollTop = newScrollTop;
         };
-        this.project = (items, averageHeight) => {
-            const isTopEnoughThree = this.topAnchorIndex > 2;
-            const startIndex = isTopEnoughThree ? this.topAnchorIndex - 3 : 0;
-            const sample = items.slice(startIndex, this.bottomAnchorIndex + 1);
-            const uponContentPlaceholderHeight = isTopEnoughThree ? this.cachedItemRect[this.topAnchorIndex - 3].top - this.divDom.offsetTop : 0;
-            this.setState({ sample, uponContentPlaceholderHeight });
-        };
     }
     componentWillReceiveProps(nextProps) {
-        this.project(nextProps.items, nextProps.averageHeight);
+        this.projector.next(nextProps.items);
     }
     componentDidUpdate() {
-        const cachedItemRectLength = this.cachedItemRect.length;
-        const unCachedItemCount = this.props.items.length - cachedItemRectLength;
-        const underContentPlaceholderHeight = cachedItemRectLength > 0 ? this.cachedItemRect[cachedItemRectLength - 1].bottom - this.cachedItemRect[this.bottomAnchorIndex].bottom + unCachedItemCount * this.props.averageHeight : 0;
-        this.underContentDivDom.style.height = underContentPlaceholderHeight + "px";
     }
     componentDidMount() {
-        this.guestimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / this.props.averageHeight);
-        this.bottomAnchorIndex = this.topAnchorIndex + Math.round(this.guestimatedItemCountPerPage * 1.5) - 1;
+        this.projector = new projector_1.Projector(this.divDom, this.props.items, this.props.averageHeight);
+        this.projector.subscribe((projectedItems, uponContentPlaceholderHeight) => {
+            this.setState({ projectedItems, uponContentPlaceholderHeight });
+        });
     }
     render() {
         return (React.createElement("div", { id: "c", ref: div => this.divDom = div, style: { overflow: "scroll", boxSizing: "border-box", height: "100%" }, onScroll: this.onScroll },
             React.createElement("div", { style: { height: this.state.uponContentPlaceholderHeight } }),
-            this.state.sample.map((item, index) => React.createElement(this.createChild(item, (this.topAnchorIndex > 3 ? this.topAnchorIndex - 3 : 0) + index), { key: item.id })),
+            this.state.projectedItems.map((item, index) => React.createElement(this.createChild(item, this.projector.startIndex + index), { key: this.props.key ? item[this.props.key] : index })),
             React.createElement("div", { ref: div => this.underContentDivDom = div })));
     }
 }
@@ -18500,8 +18467,69 @@ exports.default = InifiteScroll;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-const message_1 = __webpack_require__(31);
-const shortid_1 = __webpack_require__(32);
+class Projector {
+    constructor(divDom, items, averageHeight) {
+        this.divDom = divDom;
+        this.items = items;
+        this.averageHeight = averageHeight;
+        this.startIndex = 0;
+        this.endIndex = 0;
+        this.anchorItem = { index: 0, offset: 0 };
+        this.cachedItemRect = [];
+        this.guestimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / averageHeight);
+        this.endIndex = this.startIndex + this.guestimatedItemCountPerPage * 2 - 1;
+    }
+    next(items) {
+        if (items)
+            this.items = items;
+        const projectedItems = items.slice(this.startIndex, this.endIndex + 1);
+        const uponContentPlaceholderHeight = this.cachedItemRect[this.startIndex].top - this.divDom.offsetTop;
+        this._callback(projectedItems, uponContentPlaceholderHeight);
+    }
+    up() {
+        const delta = this.divDom.scrollTop - this.anchorItem.offset;
+        const anchorItemRect = this.cachedItemRect[this.anchorItem.index];
+        if (delta > anchorItemRect.height) {
+            const currentAnchorItemTop = anchorItemRect.top + delta;
+            const itemIndex = this.cachedItemRect.findIndex(item => item.bottom > currentAnchorItemTop);
+            this.endIndex += itemIndex - this.anchorItem.index;
+            this.anchorItem.index = itemIndex;
+            this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0;
+            this.anchorItem.offset = this.cachedItemRect[itemIndex].top - this.divDom.offsetTop;
+            this.next();
+        }
+    }
+    down() {
+        const delta = this.divDom.scrollTop - this.anchorItem.offset;
+        const beforeAnchorRect = this.cachedItemRect[this.anchorItem.index - 1];
+        if (!beforeAnchorRect)
+            return;
+        if (delta * -1 > beforeAnchorRect.height) {
+            const currentAnchorItemBottom = beforeAnchorRect.bottom + delta;
+            const itemIndex = this.cachedItemRect.findIndex(item => item.top > currentAnchorItemBottom);
+            this.endIndex += itemIndex - this.anchorItem.index;
+            this.anchorItem.index = itemIndex;
+            this.anchorItem.offset = this.cachedItemRect[itemIndex].top - this.divDom.offsetTop;
+            this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0;
+            this.next();
+        }
+    }
+    subscribe(callback) {
+        this._callback = callback;
+    }
+}
+exports.Projector = Projector;
+
+
+/***/ }),
+/* 31 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const message_1 = __webpack_require__(32);
+const shortid_1 = __webpack_require__(33);
 function fetchData() {
     const maxLength = message_1.MESSAGES.length;
     const responseData = Array(1000).fill(0).map(() => ({ id: shortid_1.generate(), content: message_1.MESSAGES[Math.round(Math.random() * message_1.MESSAGES.length)] }));
@@ -18511,7 +18539,7 @@ exports.fetchData = fetchData;
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18793,16 +18821,16 @@ exports.MESSAGES = [
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-module.exports = __webpack_require__(33);
+module.exports = __webpack_require__(34);
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18810,15 +18838,15 @@ module.exports = __webpack_require__(33);
 
 var alphabet = __webpack_require__(5);
 var encode = __webpack_require__(15);
-var decode = __webpack_require__(36);
-var build = __webpack_require__(37);
-var isValid = __webpack_require__(38);
+var decode = __webpack_require__(37);
+var build = __webpack_require__(38);
+var isValid = __webpack_require__(39);
 
 // if you are using cluster or multiple servers use this to make each instance
 // has a unique value for worker
 // Note: I don't know if this is automatically set when using third
 // party cluster solutions such as pm2.
-var clusterWorkerId = __webpack_require__(39) || 0;
+var clusterWorkerId = __webpack_require__(40) || 0;
 
 /**
  * Set the seed.
@@ -18874,7 +18902,7 @@ module.exports.isValid = isValid;
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18906,7 +18934,7 @@ module.exports = {
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18927,7 +18955,7 @@ module.exports = randomByte;
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18951,7 +18979,7 @@ module.exports = decode;
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19006,7 +19034,7 @@ module.exports = build;
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19032,7 +19060,7 @@ module.exports = isShortId;
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
