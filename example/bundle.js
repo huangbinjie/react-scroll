@@ -18403,7 +18403,6 @@ module.exports = camelize;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = __webpack_require__(2);
-const DEFAULT_ITEM_HEIGHT = 30;
 class InifiteScroll extends React.Component {
     constructor(props) {
         super(props);
@@ -18472,11 +18471,6 @@ class InifiteScroll extends React.Component {
         };
     }
     componentWillReceiveProps(nextProps) {
-        if (this.props.items.length !== nextProps.items.length) {
-            if (nextProps.items.length < this.bottomAnchorIndex) {
-                this.bottomAnchorIndex = nextProps.items.length - 1;
-            }
-        }
         this.project(nextProps.items, nextProps.averageHeight);
     }
     componentDidUpdate() {

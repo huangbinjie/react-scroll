@@ -1,7 +1,5 @@
 import * as React from 'react'
-import { findDOMNode } from 'react-dom'
-
-const DEFAULT_ITEM_HEIGHT = 30
+import { Projector } from "./projector"
 
 export type Props<T= {}> = {
   averageHeight: number
@@ -35,14 +33,6 @@ export default class InifiteScroll extends React.Component<Props, State> {
   }
 
   public componentWillReceiveProps(nextProps: Props) {
-    if (this.props.items.length !== nextProps.items.length) {
-      // this.shouldUpdate = true
-      if (nextProps.items.length < this.bottomAnchorIndex) {
-        // 如果高度不足一屏
-        this.bottomAnchorIndex = nextProps.items.length - 1
-        // this.guestimatedItemCountPerPage = nextProps.items.length
-      }
-    }
     this.project(nextProps.items, nextProps.averageHeight)
   }
 
