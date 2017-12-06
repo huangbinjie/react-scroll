@@ -15,9 +15,17 @@ class Projector {
     next(items) {
         if (items)
             this.items = items;
-        const projectedItems = items.slice(this.startIndex, this.endIndex + 1);
-        const uponContentPlaceholderHeight = this.cachedItemRect[this.startIndex].top - this.divDom.offsetTop;
-        this._callback(projectedItems, uponContentPlaceholderHeight);
+        const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1);
+        const startItem = this.cachedItemRect[this.startIndex];
+        const uponContentPlaceholderHeight = startItem ? startItem.top - this.divDom.offsetTop : 0;
+        const cachedItemRectLength = this.cachedItemRect.length;
+        const unCachedItemCount = this.items.length - cachedItemRectLength;
+        const lastCachedItemRect = this.cachedItemRect[cachedItemRectLength - 1];
+        const lastCachedItemRectBottom = lastCachedItemRect ? lastCachedItemRect.bottom : 0;
+        const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex];
+        const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0;
+        const underContentPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight;
+        this._callback(projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight);
     }
     up() {
         const delta = this.divDom.scrollTop - this.anchorItem.offset;

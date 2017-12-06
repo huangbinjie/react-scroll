@@ -40,19 +40,17 @@ class InifiteScroll extends React.Component {
     componentWillReceiveProps(nextProps) {
         this.projector.next(nextProps.items);
     }
-    componentDidUpdate() {
-    }
     componentDidMount() {
         this.projector = new projector_1.Projector(this.divDom, this.props.items, this.props.averageHeight);
-        this.projector.subscribe((projectedItems, uponContentPlaceholderHeight) => {
-            this.setState({ projectedItems, uponContentPlaceholderHeight });
+        this.projector.subscribe((projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight) => {
+            this.setState({ projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight });
         });
     }
     render() {
         return (React.createElement("div", { id: "c", ref: div => this.divDom = div, style: { overflow: "scroll", boxSizing: "border-box", height: "100%" }, onScroll: this.onScroll },
             React.createElement("div", { style: { height: this.state.uponContentPlaceholderHeight } }),
             this.state.projectedItems.map((item, index) => React.createElement(this.createChild(item, this.projector.startIndex + index), { key: this.props.key ? item[this.props.key] : index })),
-            React.createElement("div", { ref: div => this.underContentDivDom = div })));
+            React.createElement("div", { style: { height: this.state.underContentPlaceholderHeight } })));
     }
 }
 exports.default = InifiteScroll;

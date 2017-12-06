@@ -19,12 +19,21 @@ export class Projector {
     if (items) this.items = items
 
     // slice 的第二个参数表示长度，而不是坐标，所以要 + 1
-    const projectedItems = items.slice(this.startIndex, this.endIndex + 1)
+    const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
 
     // 滑动到顶部超过3个，计算顶部高度, TODO 算法优化
-    const uponContentPlaceholderHeight = this.cachedItemRect[this.startIndex].top - this.divDom.offsetTop
+    const startItem = this.cachedItemRect[this.startIndex]
+    const uponContentPlaceholderHeight = startItem ? startItem.top - this.divDom.offsetTop : 0
 
-    this._callback(projectedItems, uponContentPlaceholderHeight)
+    const cachedItemRectLength = this.cachedItemRect.length
+    const unCachedItemCount = this.items.length - cachedItemRectLength
+    const lastCachedItemRect = this.cachedItemRect[cachedItemRectLength - 1]
+    const lastCachedItemRectBottom = lastCachedItemRect ? lastCachedItemRect.bottom : 0
+    const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex]
+    const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0
+    const underContentPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight
+
+    this._callback(projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight)
   }
 
   /**
@@ -68,4 +77,4 @@ export class Projector {
   }
 }
 
-export type Callback = (projectedItems: any[], uponContentPlaceholderHeight: number) => void
+export type Callback = (projectedItems: any[], uponContentPlaceholderHeight: number, underContentPlaceholderHeight: number) => void

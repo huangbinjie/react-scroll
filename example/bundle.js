@@ -18442,19 +18442,17 @@ class InifiteScroll extends React.Component {
     componentWillReceiveProps(nextProps) {
         this.projector.next(nextProps.items);
     }
-    componentDidUpdate() {
-    }
     componentDidMount() {
         this.projector = new projector_1.Projector(this.divDom, this.props.items, this.props.averageHeight);
-        this.projector.subscribe((projectedItems, uponContentPlaceholderHeight) => {
-            this.setState({ projectedItems, uponContentPlaceholderHeight });
+        this.projector.subscribe((projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight) => {
+            this.setState({ projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight });
         });
     }
     render() {
         return (React.createElement("div", { id: "c", ref: div => this.divDom = div, style: { overflow: "scroll", boxSizing: "border-box", height: "100%" }, onScroll: this.onScroll },
             React.createElement("div", { style: { height: this.state.uponContentPlaceholderHeight } }),
             this.state.projectedItems.map((item, index) => React.createElement(this.createChild(item, this.projector.startIndex + index), { key: this.props.key ? item[this.props.key] : index })),
-            React.createElement("div", { ref: div => this.underContentDivDom = div })));
+            React.createElement("div", { style: { height: this.state.underContentPlaceholderHeight } })));
     }
 }
 exports.default = InifiteScroll;
@@ -18482,9 +18480,17 @@ class Projector {
     next(items) {
         if (items)
             this.items = items;
-        const projectedItems = items.slice(this.startIndex, this.endIndex + 1);
-        const uponContentPlaceholderHeight = this.cachedItemRect[this.startIndex].top - this.divDom.offsetTop;
-        this._callback(projectedItems, uponContentPlaceholderHeight);
+        const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1);
+        const startItem = this.cachedItemRect[this.startIndex];
+        const uponContentPlaceholderHeight = startItem ? startItem.top - this.divDom.offsetTop : 0;
+        const cachedItemRectLength = this.cachedItemRect.length;
+        const unCachedItemCount = this.items.length - cachedItemRectLength;
+        const lastCachedItemRect = this.cachedItemRect[cachedItemRectLength - 1];
+        const lastCachedItemRectBottom = lastCachedItemRect ? lastCachedItemRect.bottom : 0;
+        const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex];
+        const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0;
+        const underContentPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight;
+        this._callback(projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight);
     }
     up() {
         const delta = this.divDom.scrollTop - this.anchorItem.offset;

@@ -28,14 +28,6 @@ export default class InifiteScroll extends React.Component<Props, State> {
     this.projector.next(nextProps.items)
   }
 
-  public componentDidUpdate() {
-    // 因为要获取下一个元素的bottom，只能等渲染之后才能拿到
-    // const cachedItemRectLength = this.cachedItemRect.length
-    // const unCachedItemCount = this.props.items.length - cachedItemRectLength
-    // const underContentPlaceholderHeight = cachedItemRectLength > 0 ? this.cachedItemRect[cachedItemRectLength - 1].bottom - this.cachedItemRect[this.bottomAnchorIndex].bottom + unCachedItemCount * this.props.averageHeight : 0
-    // this.underContentDivDom.style.height = underContentPlaceholderHeight + "px"
-  }
-
   /**
    * 第一次加载空数组，为了拿到容器的dom：divDom
    * 预估显示数量
@@ -43,8 +35,8 @@ export default class InifiteScroll extends React.Component<Props, State> {
    */
   public componentDidMount() {
     this.projector = new Projector(this.divDom, this.props.items, this.props.averageHeight)
-    this.projector.subscribe((projectedItems, uponContentPlaceholderHeight) => {
-      this.setState({ projectedItems, uponContentPlaceholderHeight })
+    this.projector.subscribe((projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight) => {
+      this.setState({ projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight })
     })
   }
 
@@ -53,7 +45,8 @@ export default class InifiteScroll extends React.Component<Props, State> {
       <div id="c" ref={div => this.divDom = div} style={{ overflow: "scroll", boxSizing: "border-box", height: "100%" }} onScroll={this.onScroll}>
         <div style={{ height: this.state.uponContentPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) => React.createElement(this.createChild(item, this.projector.startIndex + index), { key: this.props.key ? item[this.props.key] : index }))}
-        <div ref={div => this.underContentDivDom = div}></div>
+        {/* <div ref={div => this.underContentDivDom = div}></div> */}
+        <div style={{ height: this.state.underContentPlaceholderHeight }}></div>
       </div>
     )
   }
