@@ -10,23 +10,34 @@ class InifiteScroll extends React.Component {
         this.createChild = (item, index) => {
             const parent = this;
             return class Child extends React.Component {
-                componentDidMount() {
+                setCache() {
                     const cachedItemRect = parent.projector.cachedItemRect;
-                    if (!cachedItemRect[index]) {
-                        const child = this.refs.child;
-                        const rect = child.getBoundingClientRect();
-                        const prevItem = cachedItemRect[index - 1];
-                        const bottom = prevItem ? prevItem.bottom + rect.height : rect.bottom;
-                        const top = prevItem ? prevItem.bottom : rect.top;
-                        cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
+                    const curItem = cachedItemRect[index];
+                    const prevItem = cachedItemRect[index - 1];
+                    if (!curItem) {
+                        const rect = this.dom.getBoundingClientRect();
+                        if (prevItem) {
+                            const bottom = prevItem.bottom + rect.height;
+                            const top = prevItem.bottom;
+                            cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
+                        }
+                        else {
+                            const bottom = parent.state.uponContentPlaceholderHeight + rect.height;
+                            const top = parent.state.uponContentPlaceholderHeight;
+                            cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
+                        }
                     }
                 }
+                componentDidMount() {
+                    this.setCache();
+                }
                 render() {
-                    return React.createElement("div", { ref: "child" }, parent.props.onRenderCell(item, index));
+                    return React.createElement("div", { ref: div => this.dom = div }, parent.props.onRenderCell(item, index));
                 }
             };
         };
         this.onScroll = () => {
+            console.log(111);
             const newScrollTop = this.divDom.scrollTop;
             if (newScrollTop < this.scrollTop) {
                 this.projector.down();
@@ -45,6 +56,7 @@ class InifiteScroll extends React.Component {
         this.projector.subscribe((projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight) => {
             this.setState({ projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight });
         });
+        this.projector.next();
     }
     render() {
         return (React.createElement("div", { id: "c", ref: div => this.divDom = div, style: { overflow: "scroll", boxSizing: "border-box", height: "100%" }, onScroll: this.onScroll },

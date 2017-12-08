@@ -13,13 +13,10 @@ class App extends React.Component {
         api_1.fetchData().then(messages => this.setState({ messages }));
     }
     render() {
-        return (React.createElement(infinite_scroll_1.default, { averageHeight: 23, items: this.state.messages, onRenderCell: this.renderCell }));
+        return (React.createElement(infinite_scroll_1.default, { averageHeight: 44, items: this.state.messages, onRenderCell: this.renderCell }));
     }
     renderCell(item, index) {
-        return React.createElement("li", { key: index },
-            index,
-            ", ",
-            item.content);
+        return React.createElement("li", { key: index, dangerouslySetInnerHTML: { __html: item.content } });
     }
 }
 react_dom_1.render(React.createElement(App, null), document.getElementById("root"));

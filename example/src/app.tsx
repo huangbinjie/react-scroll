@@ -3,7 +3,7 @@ import { render } from 'react-dom'
 
 import Scroll from '../../src/infinite_scroll'
 
-import { fetchData } from './api'
+import { fetchData, fetchDataSync } from './api'
 
 type State = {
   messages: { id: string, content: string }[]
@@ -17,12 +17,12 @@ class App extends React.Component<{}, State> {
   }
   render() {
     return (
-      <Scroll averageHeight={23} items={this.state.messages} onRenderCell={this.renderCell} />
+      <Scroll averageHeight={44} items={this.state.messages} onRenderCell={this.renderCell} />
     )
   }
 
   renderCell(item: any, index: number) {
-    return <li key={index}>{index}, {item.content}</li>
+    return <li key={index} dangerouslySetInnerHTML={{ __html: item.content }}></li>
   }
 }
 

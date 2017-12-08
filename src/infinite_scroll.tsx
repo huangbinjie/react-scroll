@@ -19,7 +19,6 @@ export default class InifiteScroll extends React.Component<Props, State> {
 
   public state: State = { projectedItems: [], underContentPlaceholderHeight: 0, uponContentPlaceholderHeight: 0 }
   private divDom: HTMLDivElement
-  private underContentDivDom: HTMLDivElement
 
   private scrollTop = 0
   private projector: Projector
@@ -27,6 +26,12 @@ export default class InifiteScroll extends React.Component<Props, State> {
   public componentWillReceiveProps(nextProps: Props) {
     this.projector.next(nextProps.items)
   }
+
+  // public componentWillMount() {
+  //   if (this.props.items.length > 0) {
+
+  //   }
+  // }
 
   /**
    * 第一次加载空数组，为了拿到容器的dom：divDom
@@ -38,6 +43,7 @@ export default class InifiteScroll extends React.Component<Props, State> {
     this.projector.subscribe((projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight) => {
       this.setState({ projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight })
     })
+    this.projector.next()
   }
 
   public render() {
@@ -45,7 +51,6 @@ export default class InifiteScroll extends React.Component<Props, State> {
       <div id="c" ref={div => this.divDom = div} style={{ overflow: "scroll", boxSizing: "border-box", height: "100%" }} onScroll={this.onScroll}>
         <div style={{ height: this.state.uponContentPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) => React.createElement(this.createChild(item, this.projector.startIndex + index), { key: this.props.key ? item[this.props.key] : index }))}
-        {/* <div ref={div => this.underContentDivDom = div}></div> */}
         <div style={{ height: this.state.underContentPlaceholderHeight }}></div>
       </div>
     )
@@ -54,19 +59,37 @@ export default class InifiteScroll extends React.Component<Props, State> {
   public createChild = (item: any, index: number) => {
     const parent = this
     return class Child extends React.Component {
-      componentDidMount() {
+      dom: HTMLDivElement
+      setCache() {
         const cachedItemRect = parent.projector.cachedItemRect
-        if (!cachedItemRect[index]) {
-          const child = this.refs.child as HTMLDivElement
-          const rect = child.getBoundingClientRect()
-          const prevItem = cachedItemRect[index - 1]
-          const bottom = prevItem ? prevItem.bottom + rect.height : rect.bottom
-          const top = prevItem ? prevItem.bottom : rect.top
-          cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content }
+        const curItem = cachedItemRect[index]
+        const prevItem = cachedItemRect[index - 1]
+
+        if (!curItem) {
+          const rect = this.dom.getBoundingClientRect()
+          if (prevItem) {
+            // 当前item不存在但是前一个存在
+            const bottom = prevItem.bottom + rect.height
+            const top = prevItem.bottom
+            cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content }
+          } else {
+            // 当前 item 不存在，且前一个也不存在
+            const bottom = parent.state.uponContentPlaceholderHeight + rect.height
+            const top = parent.state.uponContentPlaceholderHeight
+            cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content }
+          }
         }
       }
+
+      componentDidMount() {
+        this.setCache()
+        // const images = this.dom.querySelectorAll("img")
+        // for (let image of images) {
+        //   image.onload = () => this.setCache()
+        // }
+      }
       render() {
-        return <div ref="child">
+        return <div ref={div => this.dom = div}>
           {parent.props.onRenderCell(item, index)}
         </div>
       }
@@ -74,6 +97,7 @@ export default class InifiteScroll extends React.Component<Props, State> {
   }
 
   public onScroll = () => {
+    console.log(111)
     const newScrollTop = this.divDom.scrollTop
 
     if (newScrollTop < this.scrollTop) {
