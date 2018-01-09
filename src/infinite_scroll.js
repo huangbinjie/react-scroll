@@ -1,91 +1,161 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = require("react");
-class InifiteScroll extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { sample: [], underContentPlaceholderHeight: 0, uponContentPlaceholderHeight: 0 };
-        this.topAnchorIndex = 0;
-        this.bottomAnchorIndex = 0;
-        this.shouldUpdate = true;
-        this.guestimatedItemCountPerPage = 10;
-        this.cachedItemRect = [];
+const projector_1 = require("./projector");
+class InfiniteScroll extends React.Component {
+    constructor() {
+        super(...arguments);
+        this.state = { projectedItems: [], underPlaceholderHeight: 0, upperPlaceholderHeight: 0 };
+        this.hasBottomTouched = true;
         this.scrollTop = 0;
-        this.anchorScrollTop = 0;
+        this.resizing = false;
         this.createChild = (item, index) => {
             const parent = this;
+            const itemIndex = parent.projector.startIndex + index;
             return class Child extends React.Component {
+                constructor() {
+                    super(...arguments);
+                    this.setCache = () => {
+                        const projector = parent.projector;
+                        const cachedItemRect = projector.cachedItemRect;
+                        const curItem = cachedItemRect[itemIndex];
+                        const prevItem = cachedItemRect[itemIndex - 1];
+                        if (projector.needAdjustment) {
+                            const rect = this.dom.getBoundingClientRect();
+                            if (itemIndex === projector.startIndex) {
+                                const bottom = parent.state.upperPlaceholderHeight + rect.height;
+                                const top = parent.state.upperPlaceholderHeight;
+                                cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height, needAdjustment: true };
+                            }
+                            else {
+                                const bottom = prevItem.bottom + rect.height;
+                                const top = prevItem.bottom;
+                                cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height, needAdjustment: true };
+                            }
+                            if (projector.isAdjusting && index === parent.state.projectedItems.length - 1) {
+                                projector.needAdjustment = false;
+                                projector.isAdjusting = false;
+                            }
+                        }
+                        else {
+                            if (curItem && curItem.needAdjustment === false)
+                                return;
+                            const rect = this.dom.getBoundingClientRect();
+                            if (prevItem) {
+                                const bottom = prevItem.bottom + rect.height;
+                                const top = prevItem.bottom;
+                                cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height, needAdjustment: false };
+                            }
+                            else {
+                                const bottom = parent.state.upperPlaceholderHeight + rect.height;
+                                const top = parent.state.upperPlaceholderHeight;
+                                cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height, needAdjustment: false };
+                            }
+                        }
+                    };
+                }
                 componentDidMount() {
-                    if (!parent.cachedItemRect[index]) {
-                        const child = this.refs.child;
-                        const rect = child.getBoundingClientRect();
-                        const prevItem = parent.cachedItemRect[index - 1];
-                        const bottom = prevItem ? prevItem.bottom + rect.height : rect.bottom;
-                        const top = prevItem ? prevItem.bottom : rect.top;
-                        parent.cachedItemRect[index] = { top, bottom, height: rect.height, text: item.content };
-                    }
+                    this.setCache();
                 }
                 render() {
-                    return React.createElement("div", { ref: "child" }, parent.props.onRenderCell(item, index));
+                    return React.createElement("div", { ref: div => this.dom = div }, parent.props.onRenderCell(item, itemIndex));
                 }
             };
         };
         this.onScroll = () => {
-            const anchorRect = this.cachedItemRect[this.topAnchorIndex];
-            const beforeAnchorRect = this.cachedItemRect[this.topAnchorIndex - 1];
             const newScrollTop = this.divDom.scrollTop;
-            const offsetTop = this.divDom.offsetTop;
-            const delta = newScrollTop - this.anchorScrollTop;
+            this.props.onScroll(this.divDom);
             if (newScrollTop < this.scrollTop) {
-                if (!beforeAnchorRect)
-                    return;
-                if (delta * -1 > beforeAnchorRect.height) {
-                    const bottom = beforeAnchorRect.bottom + delta;
-                    const itemIndex = this.cachedItemRect.findIndex(item => item.top > bottom);
-                    this.bottomAnchorIndex += itemIndex - this.topAnchorIndex;
-                    this.topAnchorIndex = itemIndex;
-                    this.anchorScrollTop = this.cachedItemRect[itemIndex].top - offsetTop;
-                    this.project(this.props.items, this.props.averageHeight);
-                }
+                this.projector.down();
             }
             else {
-                if (delta > anchorRect.height) {
-                    const bottom = anchorRect.top + delta;
-                    const itemIndex = this.cachedItemRect.findIndex(item => item.bottom > bottom);
-                    this.bottomAnchorIndex += itemIndex - this.topAnchorIndex;
-                    this.topAnchorIndex = itemIndex;
-                    this.anchorScrollTop = this.cachedItemRect[itemIndex].top - offsetTop;
-                    this.project(this.props.items, this.props.averageHeight);
-                }
+                this.projector.up();
             }
             this.scrollTop = newScrollTop;
         };
-        this.project = (items, averageHeight) => {
-            const isTopEnoughThree = this.topAnchorIndex > 2;
-            const startIndex = isTopEnoughThree ? this.topAnchorIndex - 3 : 0;
-            const sample = items.slice(startIndex, this.bottomAnchorIndex + 1);
-            const uponContentPlaceholderHeight = isTopEnoughThree ? this.cachedItemRect[this.topAnchorIndex - 3].top - this.divDom.offsetTop : 0;
-            this.setState({ sample, uponContentPlaceholderHeight });
-        };
     }
     componentWillReceiveProps(nextProps) {
-        this.project(nextProps.items, nextProps.averageHeight);
+        this.hasBottomTouched = false;
+        this.projector.next(nextProps.items);
     }
     componentDidUpdate() {
-        const cachedItemRectLength = this.cachedItemRect.length;
-        const unCachedItemCount = this.props.items.length - cachedItemRectLength;
-        const underContentPlaceholderHeight = cachedItemRectLength > 0 ? this.cachedItemRect[cachedItemRectLength - 1].bottom - this.cachedItemRect[this.bottomAnchorIndex].bottom + unCachedItemCount * this.props.averageHeight : 0;
-        this.underContentDivDom.style.height = underContentPlaceholderHeight + "px";
+        this.adjustUpperPlaceholderHieght();
     }
     componentDidMount() {
-        this.guestimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / this.props.averageHeight);
-        this.bottomAnchorIndex = this.topAnchorIndex + Math.round(this.guestimatedItemCountPerPage * 1.5) - 1;
+        this.width = this.divDom.clientWidth;
+        this.projector = new projector_1.Projector(this.divDom, this.upperContentDom, this.props.items, this.props.itemAverageHeight, this.props.cache);
+        this.projector.subscribe((projectedItems, upperPlaceholderHeight, underPlaceholderHeight) => {
+            if (underPlaceholderHeight < this.divDom.clientHeight && !this.hasBottomTouched) {
+                this.hasBottomTouched = true;
+                this.props.onEnd();
+            }
+            const prevStateItemsLength = this.state.projectedItems.length;
+            this.setState({ projectedItems, upperPlaceholderHeight, underPlaceholderHeight }, () => {
+                if (prevStateItemsLength === 0 && projectedItems.length > 0) {
+                    this.divDom.scrollTop = this.props.initialScrollTop;
+                }
+            });
+        });
+        if (this.props.items.length > 0) {
+            this.hasBottomTouched = false;
+            this.projector.next();
+        }
+        window.addEventListener("resize", () => {
+            if (this.divDom.clientWidth !== this.width) {
+                this.width = this.divDom.clientWidth;
+                this.resizing = true;
+                this.projector.cachedItemRect.length = 0;
+                this.projector.needAdjustment = true;
+                this.setState({});
+            }
+        });
     }
     render() {
-        return (React.createElement("div", { id: "c", ref: div => this.divDom = div, style: { overflow: "scroll", boxSizing: "border-box", height: "100%" }, onScroll: this.onScroll },
-            React.createElement("div", { style: { height: this.state.uponContentPlaceholderHeight } }),
-            this.state.sample.map((item, index) => React.createElement(this.createChild(item, (this.topAnchorIndex > 3 ? this.topAnchorIndex - 3 : 0) + index), { key: item.id })),
-            React.createElement("div", { ref: div => this.underContentDivDom = div })));
+        return (React.createElement("div", { id: "c", ref: div => this.divDom = div, style: { overflow: "scroll", WebkitOverflowScrolling: "touch", height: this.props.containerHeight }, onScroll: this.onScroll },
+            React.createElement("div", { ref: div => this.upperContentDom = div, style: { height: this.state.upperPlaceholderHeight } }),
+            this.state.projectedItems.map((item, index) => React.createElement(this.createChild(item, index), { key: this.props.identity ? item[this.props.identity] : index })),
+            React.createElement("div", { style: { height: this.state.underPlaceholderHeight } })));
+    }
+    adjustUpperPlaceholderHieght() {
+        if (this.projector.needAdjustment) {
+            const cachedItemRect = this.projector.cachedItemRect;
+            const anchor = this.projector.anchorItem;
+            const cachedAnchorItem = cachedItemRect[anchor.index];
+            const startItem = this.projector.cachedItemRect[this.projector.startIndex];
+            const finalHeight = this.projector.computeUpperPlaceholderHeight(cachedAnchorItem, startItem.top);
+            const scrollTop = this.divDom.scrollTop;
+            const upperPlaceholderHeight = startItem.index === 0 ? 0 : finalHeight < 0 ? 0 : finalHeight;
+            this.setState({ upperPlaceholderHeight }, () => {
+                if (startItem.index > 0) {
+                    if (finalHeight < 0)
+                        this.divDom.scrollTop = scrollTop - finalHeight;
+                    if (this.resizing) {
+                        const currentAnchor = this.projector.cachedItemRect[this.projector.startIndex + 3];
+                        const anchorDelta = anchor.offset - currentAnchor.top;
+                        const nextScrollTop = this.divDom.scrollTop - anchorDelta;
+                        if (nextScrollTop < currentAnchor.top) {
+                            this.divDom.scrollTop = currentAnchor.top;
+                        }
+                        else if (nextScrollTop > currentAnchor.bottom) {
+                            this.divDom.scrollTop = currentAnchor.bottom;
+                        }
+                        else {
+                            this.divDom.scrollTop = nextScrollTop;
+                        }
+                        this.resizing = false;
+                    }
+                }
+                else {
+                    this.divDom.scrollTop = scrollTop - finalHeight;
+                }
+            });
+        }
+        this.projector.anchorItem = { index: this.projector.startIndex + 3, offset: this.projector.cachedItemRect[this.projector.startIndex + 3].top };
     }
 }
-exports.default = InifiteScroll;
+InfiniteScroll.defaultProps = {
+    initialScrollTop: 0,
+    onScroll: () => { },
+    onEnd: () => { }
+};
+exports.InfiniteScroll = InfiniteScroll;
