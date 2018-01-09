@@ -9,7 +9,7 @@ export type Props<T= {}> = {
   itemAverageHeight: number
   className?: string
   items: T[]
-  itemKey?: string
+  itemKey: string
   initialScrollTop?: number
   onRenderCell: (item?: T, index?: number) => React.ReactNode
   onScroll?: (dom: HTMLDivElement) => void
