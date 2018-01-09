@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { render } from 'react-dom'
 
-import { InfiniteScroll } from '../../src/scroller'
+import { InfiniteScroller } from '../../src/scroller'
 
 import { fetchLocalMessage, fetchData, fetchDataSync } from './api'
 
@@ -17,7 +17,7 @@ class App extends React.Component<{}, State> {
   }
   render() {
     return (
-      <InfiniteScroll
+      <InfiniteScroller
         itemAverageHeight={22}
         containerHeight={window.innerHeight}
         items={this.state.messages}
