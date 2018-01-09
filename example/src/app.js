@@ -2,21 +2,22 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = require("react");
 const react_dom_1 = require("react-dom");
-const infinite_scroll_1 = require("../../src/infinite_scroll");
+const scroller_1 = require("../../src/scroller");
 const api_1 = require("./api");
 class App extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { messages: [] };
+        this.state = { messages: api_1.fetchLocalMessage() };
     }
     componentDidMount() {
-        api_1.fetchData().then(messages => this.setState({ messages }));
     }
     render() {
-        return (React.createElement(infinite_scroll_1.default, { averageHeight: 44, items: this.state.messages, onRenderCell: this.renderCell }));
+        return (React.createElement(scroller_1.InfiniteScroll, { itemAverageHeight: 22, containerHeight: window.innerHeight, items: this.state.messages, itemKey: "id", onRenderCell: this.renderCell }));
     }
     renderCell(item, index) {
-        return React.createElement("li", { key: index, dangerouslySetInnerHTML: { __html: item.content } });
+        return React.createElement("li", { key: index },
+            item.content,
+            React.createElement("span", { style: { color: "red" } }, index));
     }
 }
 react_dom_1.render(React.createElement(App, null), document.getElementById("root"));

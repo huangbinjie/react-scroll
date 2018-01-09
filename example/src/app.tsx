@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { render } from 'react-dom'
 
-import Scroll from '../../src/infinite_scroll'
+import { InfiniteScroll } from '../../src/scroller'
 
-import { fetchData, fetchDataSync } from './api'
+import { fetchLocalMessage, fetchData, fetchDataSync } from './api'
 
 type State = {
   messages: { id: string, content: string }[]
@@ -11,18 +11,24 @@ type State = {
 
 
 class App extends React.Component<{}, State> {
-  state: State = { messages: [] }
+  state: State = { messages: fetchLocalMessage() }
   componentDidMount() {
-    fetchData().then(messages => this.setState({ messages }))
+    // fetchData().then(messages => this.setState({ messages }))
   }
   render() {
     return (
-      <Scroll averageHeight={44} items={this.state.messages} onRenderCell={this.renderCell} />
+      <InfiniteScroll
+        itemAverageHeight={22}
+        containerHeight={window.innerHeight}
+        items={this.state.messages}
+        itemKey="id"
+        onRenderCell={this.renderCell}
+      />
     )
   }
 
   renderCell(item: any, index: number) {
-    return <li key={index} dangerouslySetInnerHTML={{ __html: item.content }}></li>
+    return <li key={index}>{item.content}<span style={{ color: "red" }}>{index}</span></li>
   }
 }
 

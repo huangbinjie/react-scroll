@@ -1,16 +1,61 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class Projector {
-    constructor(divDom, items, averageHeight) {
-        this.divDom = divDom;
+    constructor(scroller, items, averageHeight, cachedItemRect = []) {
+        this.scroller = scroller;
         this.items = items;
         this.averageHeight = averageHeight;
+        this.cachedItemRect = cachedItemRect;
         this.startIndex = 0;
         this.endIndex = 0;
         this.anchorItem = { index: 0, offset: 0 };
-        this.cachedItemRect = [];
-        this.guestimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / averageHeight);
-        this.displayCount = this.guestimatedItemCountPerPage;
+        this.up = () => {
+            const scrollTop = this.scrollerDom.scrollTop;
+            const anchorItemRect = this.cachedItemRect[this.anchorItem.index];
+            if (scrollTop > anchorItemRect.bottom) {
+                const itemIndex = this.cachedItemRect.findIndex(item => item ? item.bottom > scrollTop : false);
+                if (itemIndex === -1) {
+                    const cachedItemLength = this.cachedItemRect.length;
+                    const unCachedDelta = scrollTop - this.cachedItemRect[cachedItemLength - 1].bottom;
+                    const guestimatedUnCachedCount = Math.ceil(unCachedDelta / this.averageHeight);
+                    this.startIndex = this.endIndex + guestimatedUnCachedCount - 3;
+                    this.endIndex = this.startIndex + this.displayCount - 1;
+                    this.cachedItemRect.length = 0;
+                }
+                else {
+                    this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0;
+                    this.endIndex = this.startIndex + this.displayCount - 1;
+                    this.anchorItem.index = itemIndex;
+                    this.anchorItem.offset = this.cachedItemRect[itemIndex].top;
+                }
+                this.next();
+            }
+        };
+        this.down = () => {
+            const scrollTop = this.scrollerDom.scrollTop;
+            if (this.anchorItem.index > 3 && scrollTop < this.anchorItem.offset) {
+                const startItem = this.cachedItemRect[this.startIndex];
+                const itemIndex = this.cachedItemRect.findIndex(item => item ? item.top > scrollTop : false) - 1;
+                if (!this.cachedItemRect[itemIndex - 3]) {
+                    const delta = this.anchorItem.offset - this.scrollerDom.scrollTop;
+                    const guestimatedOutOfProjectorCount = Math.ceil(delta / this.averageHeight);
+                    const guestimatedStartIndex = this.startIndex - guestimatedOutOfProjectorCount;
+                    this.startIndex = guestimatedStartIndex < 0 ? 0 : guestimatedStartIndex;
+                    this.endIndex = this.startIndex + this.displayCount - 1;
+                    this.cachedItemRect.length = 0;
+                }
+                else {
+                    this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0;
+                    this.endIndex = this.startIndex + this.displayCount - 1;
+                    this.anchorItem.index = itemIndex;
+                    this.anchorItem.offset = this.cachedItemRect[itemIndex].top;
+                }
+                this.next();
+            }
+        };
+        this.scrollerDom = scroller.divDom;
+        this.guestimatedItemCountPerPage = Math.ceil(this.scrollerDom.clientHeight / averageHeight);
+        this.displayCount = this.guestimatedItemCountPerPage + 3;
         this.endIndex = this.startIndex + this.displayCount - 1;
     }
     next(items) {
@@ -18,77 +63,28 @@ class Projector {
             this.items = items;
         const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1);
         const startItem = this.cachedItemRect[this.startIndex];
-        let uponContentPlaceholderHeight = 0;
+        let upperPlaceholderHeight = 0;
+        let needAdjustment = false;
         if (startItem) {
-            uponContentPlaceholderHeight = startItem.top;
-        }
-        else if (this.startIndex > 0) {
-            uponContentPlaceholderHeight = this.anchorItem.offset - 3 * this.averageHeight;
+            upperPlaceholderHeight = startItem.top;
         }
         else {
-            uponContentPlaceholderHeight = 0;
+            upperPlaceholderHeight = this.scroller.state.upperPlaceholderHeight;
+            needAdjustment = true;
         }
         const cachedItemRectLength = this.cachedItemRect.length;
-        const unCachedItemCount = this.items.length - cachedItemRectLength;
+        const endIndex = cachedItemRectLength === 0 ? this.endIndex : cachedItemRectLength;
+        const bottomCountDelta = this.items.length - endIndex;
+        const unCachedItemCount = bottomCountDelta < 0 ? 0 : bottomCountDelta;
         const lastCachedItemRect = this.cachedItemRect[cachedItemRectLength - 1];
         const lastCachedItemRectBottom = lastCachedItemRect ? lastCachedItemRect.bottom : 0;
         const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex];
         const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0;
-        const underContentPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight;
-        this._callback(projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight);
-    }
-    up() {
-        const delta = this.divDom.scrollTop - this.anchorItem.offset;
-        const anchorItemRect = this.cachedItemRect[this.anchorItem.index];
-        if (delta > anchorItemRect.height) {
-            const currentAnchorItemTop = anchorItemRect.top + delta;
-            const itemIndex = this.cachedItemRect.findIndex(item => item ? item.bottom > currentAnchorItemTop : false);
-            if (itemIndex === -1) {
-                const cachedItemLength = this.cachedItemRect.length;
-                const unCachedDelta = currentAnchorItemTop - this.cachedItemRect[cachedItemLength - 1].bottom;
-                const guestimatedUnCachedCount = Math.ceil(unCachedDelta / this.averageHeight);
-                this.anchorItem.index = this.endIndex + guestimatedUnCachedCount;
-                this.startIndex = this.anchorItem.index - 3;
-                this.endIndex = this.startIndex + this.displayCount - 1;
-                this.anchorItem.offset = this.cachedItemRect[cachedItemLength - 1].bottom + guestimatedUnCachedCount * this.averageHeight;
-            }
-            else {
-                this.endIndex += itemIndex - this.anchorItem.index;
-                this.anchorItem.index = itemIndex;
-                this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0;
-                this.anchorItem.offset = this.cachedItemRect[itemIndex].top;
-            }
-            this.next();
-        }
-    }
-    down() {
-        const delta = (this.divDom.scrollTop - this.anchorItem.offset) * -1;
-        const beforeAnchorRect = this.cachedItemRect[this.anchorItem.index - 1];
-        if (!beforeAnchorRect)
-            return;
-        if (delta > beforeAnchorRect.height) {
-            const currentAnchorItemBottom = beforeAnchorRect.bottom - delta;
-            const itemIndex = this.cachedItemRect.findIndex(item => item ? item.top > currentAnchorItemBottom : false);
-            if (itemIndex === this.anchorItem.index - 3) {
-                const guestimatedOutOfProjectorDelta = delta - this.cachedItemRect[this.anchorItem.index - 1].height - this.cachedItemRect[this.anchorItem.index - 2].height - this.cachedItemRect[this.anchorItem.index - 3].height;
-                const guestimatedOutOfProjectorCount = Math.floor(guestimatedOutOfProjectorDelta / this.averageHeight);
-                const guestimatedStartIndex = itemIndex - guestimatedOutOfProjectorCount - 3;
-                this.startIndex = guestimatedStartIndex < 0 ? 0 : guestimatedStartIndex;
-                this.endIndex = this.startIndex + this.displayCount - 1;
-                this.anchorItem.index = this.startIndex + 3;
-                this.anchorItem.offset = currentAnchorItemBottom;
-            }
-            else {
-                this.endIndex += itemIndex - this.anchorItem.index;
-                this.anchorItem.index = itemIndex;
-                this.anchorItem.offset = this.cachedItemRect[itemIndex].top;
-                this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0;
-            }
-            this.next();
-        }
+        const underPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight;
+        this.callback(projectedItems, upperPlaceholderHeight, underPlaceholderHeight, needAdjustment);
     }
     subscribe(callback) {
-        this._callback = callback;
+        this.callback = callback;
     }
 }
 exports.Projector = Projector;

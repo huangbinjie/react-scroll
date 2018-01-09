@@ -2,9 +2,13 @@ import { MESSAGES } from "./message"
 import { generate } from "shortid"
 import * as faker from "faker"
 
+export function fetchLocalMessage() {
+  return Array(1000).fill(0).map(() => ({ id: generate(), content: MESSAGES[Math.round(Math.random() * 200)] }))
+}
+
 export function fetchData() {
   const maxLength = MESSAGES.length
-  const responseData = Array(1000).fill(0).map(() => ({ id: generate(), content: genTextOrImgage() }))
+  const responseData = Array(100000).fill(0).map(() => ({ id: generate(), content: genTextOrImgage() }))
   return Promise.resolve(responseData)
 }
 

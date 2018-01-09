@@ -1,81 +1,86 @@
+import { InfiniteScroll } from "./scroller"
+
 export class Projector {
-  private _callback: Callback
-  private guestimatedItemCountPerPage: number
-  private displayCount: number
   // 开始坐标
   public startIndex = 0
   // 结束坐标，endIndex 可以超过 items 最大长度
   public endIndex = 0
-  // 描点，index 等于 index 或者 startIndex + 3。offset 等于描点到容器顶部的scrollTop
+  // 描点，index 等于 index 或者 startIndex + 3。offset 等于描点顶部到容器顶部的scrollTop
   public anchorItem = { index: 0, offset: 0 }
-  public cachedItemRect: { top: number, bottom: number, height: number, text: string }[] = []
+
+  private callback: Callback
+  private guestimatedItemCountPerPage: number
+  private displayCount: number
+  private scrollerDom: HTMLDivElement
+
   constructor(
-    public divDom: HTMLDivElement,
+    public scroller: InfiniteScroll,
     public items: any[],
-    public averageHeight: number
+    public averageHeight: number,
+    public cachedItemRect = [] as Cache[]
   ) {
-    this.guestimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / averageHeight)
-    this.displayCount = this.guestimatedItemCountPerPage
+    this.scrollerDom = scroller.divDom
+    this.guestimatedItemCountPerPage = Math.ceil(this.scrollerDom.clientHeight / averageHeight)
+    this.displayCount = this.guestimatedItemCountPerPage + 3
     this.endIndex = this.startIndex + this.displayCount - 1
   }
 
   public next(items?: any[]) {
     if (items) this.items = items
-
-    // slice 的第二个参数表示长度，而不是坐标，所以要 + 1
+    // slice 的第二个参数不包括在内，为了要算进去，所以要 + 1
     const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
 
     const startItem = this.cachedItemRect[this.startIndex]
 
-    let uponContentPlaceholderHeight = 0
+    let upperPlaceholderHeight = 0
+    let needAdjustment = false
     if (startItem) {
       // 正常
-      uponContentPlaceholderHeight = startItem.top
-    } else if (this.startIndex > 0) {
-      // 滑动幅度太大， startItem 不存在， startIndex 又大于 0
-      uponContentPlaceholderHeight = this.anchorItem.offset - 3 * this.averageHeight
+      upperPlaceholderHeight = startItem.top
     } else {
-      // items从空到填满，这个时候是初始化，所以是0
-      uponContentPlaceholderHeight = 0
+      // 如果起点不存在，则判断是猜测得来的。目前会导致这种情况的场景只有 resize，因为resize会清空缓存
+      upperPlaceholderHeight = this.scroller.state.upperPlaceholderHeight
+      needAdjustment = true
     }
 
     const cachedItemRectLength = this.cachedItemRect.length
-    const unCachedItemCount = this.items.length - cachedItemRectLength
+    // 快速往上滑会清空缓存，没有缓存就有endindex
+    const endIndex = cachedItemRectLength === 0 ? this.endIndex : cachedItemRectLength
+    const bottomCountDelta = this.items.length - endIndex
+    const unCachedItemCount = bottomCountDelta < 0 ? 0 : bottomCountDelta
     const lastCachedItemRect = this.cachedItemRect[cachedItemRectLength - 1]
     const lastCachedItemRectBottom = lastCachedItemRect ? lastCachedItemRect.bottom : 0
     const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex]
     const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0
-    const underContentPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight
+    const underPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight
 
-    this._callback(projectedItems, uponContentPlaceholderHeight, underContentPlaceholderHeight)
+    this.callback(projectedItems, upperPlaceholderHeight, underPlaceholderHeight, needAdjustment)
   }
 
   /**
    * 手往上滑， 屏幕往下滑
    */
-  public up() {
-    const delta = this.divDom.scrollTop - this.anchorItem.offset
+  public up = () => {
+    const scrollTop = this.scrollerDom.scrollTop
     const anchorItemRect = this.cachedItemRect[this.anchorItem.index]
-    //滑动范围超过一个元素的高度之后再处理
-    if (delta > anchorItemRect.height) {
-      const currentAnchorItemTop = anchorItemRect.top + delta
-      const itemIndex = this.cachedItemRect.findIndex(item => item ? item.bottom > currentAnchorItemTop : false)
+    // 滑动范围超过一个元素的高度之后再处理
+    if (scrollTop > anchorItemRect.bottom) {
+      const itemIndex = this.cachedItemRect.findIndex(item => item ? item.bottom > scrollTop : false)
       if (itemIndex === -1) {
         // 滑的太快,读不出坐标,猜一个 itemIndex
         const cachedItemLength = this.cachedItemRect.length
-        const unCachedDelta = currentAnchorItemTop - this.cachedItemRect[cachedItemLength - 1].bottom
+        const unCachedDelta = scrollTop - this.cachedItemRect[cachedItemLength - 1].bottom
         // 缓存最后一个到当前anchor位置之间的item数量，暂时是猜测
         const guestimatedUnCachedCount = Math.ceil(unCachedDelta / this.averageHeight)
-        this.anchorItem.index = this.endIndex + guestimatedUnCachedCount
-        this.startIndex = this.anchorItem.index - 3
+        // this.anchorItem.index = this.endIndex + guestimatedUnCachedCount
+        this.startIndex = this.endIndex + guestimatedUnCachedCount - 3
         this.endIndex = this.startIndex + this.displayCount - 1
-        // 已缓存的高度加上猜测的高度
-        this.anchorItem.offset = this.cachedItemRect[cachedItemLength - 1].bottom + guestimatedUnCachedCount * this.averageHeight
+        this.cachedItemRect.length = 0
       } else {
         // 正常滑动速度
-        this.endIndex += itemIndex - this.anchorItem.index
-        this.anchorItem.index = itemIndex
         this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0
+        this.endIndex = this.startIndex + this.displayCount - 1
+        this.anchorItem.index = itemIndex
         this.anchorItem.offset = this.cachedItemRect[itemIndex].top
       }
       this.next()
@@ -85,37 +90,35 @@ export class Projector {
   /**
    * 手往下滑， 屏幕往上滑
    */
-  public down() {
-    const delta = (this.divDom.scrollTop - this.anchorItem.offset) * -1
-    const beforeAnchorRect = this.cachedItemRect[this.anchorItem.index - 1]
-    if (!beforeAnchorRect) return
-    if (delta > beforeAnchorRect.height) {
-      const currentAnchorItemBottom = beforeAnchorRect.bottom - delta
-      const itemIndex = this.cachedItemRect.findIndex(item => item ? item.top > currentAnchorItemBottom : false)
-      if (itemIndex === this.anchorItem.index - 3) {
-        //假设 [1,2,3,undefined,4] 从4往上滑，如果是3和4之间，那么会拿到4的下标，4的小标恰好是 this.anchorItem.index - 3，
-        //其他情况会拿到1-3的下标
-        const guestimatedOutOfProjectorDelta = delta - this.cachedItemRect[this.anchorItem.index - 1].height - this.cachedItemRect[this.anchorItem.index - 2].height - this.cachedItemRect[this.anchorItem.index - 3].height
-        const guestimatedOutOfProjectorCount = Math.floor(guestimatedOutOfProjectorDelta / this.averageHeight)
-        const guestimatedStartIndex = itemIndex - guestimatedOutOfProjectorCount - 3
+  public down = () => {
+    const scrollTop = this.scrollerDom.scrollTop
+    if (this.anchorItem.index > 3 && scrollTop < this.anchorItem.offset) {
+      const startItem = this.cachedItemRect[this.startIndex]
+      // const prevItem = this.cachedItemRect[this.startIndex - 1]
+      const itemIndex = this.cachedItemRect.findIndex(item => item ? item.top > scrollTop : false) - 1
+      if (!this.cachedItemRect[itemIndex - 3]) {
+        const delta = this.anchorItem.offset - this.scrollerDom.scrollTop
+        // 往上快速滑动，假设 [1,2,3,undefined,4] 从4往上滑，如果是3和4之间，那么会拿到4的下标，4的下标恰好是 this.anchorItem.index - 3，
+        // 其他情况会拿到1-3的下标
+        const guestimatedOutOfProjectorCount = Math.ceil(delta / this.averageHeight)
+        const guestimatedStartIndex = this.startIndex - guestimatedOutOfProjectorCount
         this.startIndex = guestimatedStartIndex < 0 ? 0 : guestimatedStartIndex
         this.endIndex = this.startIndex + this.displayCount - 1
-        this.anchorItem.index = this.startIndex + 3
-        this.anchorItem.offset = currentAnchorItemBottom
+        this.cachedItemRect.length = 0
       } else {
-        // itemIndex - this.anchorItem.index 等于滑过了多少个 item， 所以end 也要及时更新
-        this.endIndex += itemIndex - this.anchorItem.index
+        this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0
+        this.endIndex = this.startIndex + this.displayCount - 1
         this.anchorItem.index = itemIndex
         this.anchorItem.offset = this.cachedItemRect[itemIndex].top
-        this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0
       }
       this.next()
     }
   }
 
   public subscribe(callback: Callback) {
-    this._callback = callback
+    this.callback = callback
   }
 }
 
-export type Callback = (projectedItems: any[], uponContentPlaceholderHeight: number, underContentPlaceholderHeight: number) => void
+export type Callback = (projectedItems: any[], upperPlaceholderHeight: number, underPlaceholderHeight: number, needAdjustment: boolean) => void
+export type Cache = { index: number, top: number, bottom: number, height: number, needAdjustment?: boolean }
