@@ -22,7 +22,7 @@ export type State = {
   underPlaceholderHeight: number
 }
 
-export class InfiniteScroll extends React.Component<Props, State> {
+export class InfiniteScroller extends React.Component<Props, State> {
   public static defaultProps = {
     initialScrollTop: 0,
     onScroll: () => { },
