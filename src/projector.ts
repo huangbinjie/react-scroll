@@ -1,4 +1,4 @@
-import { InfiniteScroll } from "./scroller"
+import { InfiniteScroller } from "./scroller"
 
 export class Projector {
   // 开始坐标
@@ -14,7 +14,7 @@ export class Projector {
   private scrollerDom: HTMLDivElement
 
   constructor(
-    public scroller: InfiniteScroll,
+    public scroller: InfiniteScroller,
     public items: any[],
     public averageHeight: number,
     public cachedItemRect = [] as Cache[]
