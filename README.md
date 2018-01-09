@@ -23,6 +23,10 @@ return <InfiniteScroller
 
 ## props
 
+### containerHeight(required): number
+
+scroller 的高度
+
 ### items(required): any[]
 
 你的数据
