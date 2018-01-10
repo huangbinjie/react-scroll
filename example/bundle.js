@@ -18808,7 +18808,8 @@ class Projector {
             if (scrollTop < this.anchorItem.offset) {
                 const startItem = this.cachedItemRect[this.startIndex];
                 const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false);
-                if (this.cachedItemRect[nextAnchorItem.index - 3]) {
+                const nextStartIndex = nextAnchorItem.index - 3;
+                if (this.cachedItemRect[nextStartIndex > 0 ? nextStartIndex : 0]) {
                     this.startIndex = nextAnchorItem.index > 2 ? nextAnchorItem.index - 3 : 0;
                     this.endIndex = this.startIndex + this.displayCount - 1;
                     this.anchorItem.index = nextAnchorItem.index;

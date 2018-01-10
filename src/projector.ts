@@ -95,7 +95,9 @@ export class Projector {
     if (scrollTop < this.anchorItem.offset) {
       const startItem = this.cachedItemRect[this.startIndex]
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
-      if (this.cachedItemRect[nextAnchorItem.index - 3]) {
+      const nextStartIndex = nextAnchorItem.index - 3
+      // 判断起点在不在，在的话是正常滑动，不在是猜测
+      if (this.cachedItemRect[nextStartIndex > 0 ? nextStartIndex : 0]) {
         this.startIndex = nextAnchorItem.index > 2 ? nextAnchorItem.index - 3 : 0
         this.endIndex = this.startIndex + this.displayCount - 1
         this.anchorItem.index = nextAnchorItem.index
