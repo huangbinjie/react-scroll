@@ -12,7 +12,7 @@ class App extends React.Component {
     componentDidMount() {
     }
     render() {
-        return (React.createElement(scroller_1.InfiniteScroll, { itemAverageHeight: 22, containerHeight: window.innerHeight, items: this.state.messages, itemKey: "id", onRenderCell: this.renderCell }));
+        return (React.createElement(scroller_1.InfiniteScroller, { itemAverageHeight: 22, containerHeight: window.innerHeight, items: this.state.messages, itemKey: "id", onRenderCell: this.renderCell }));
     }
     renderCell(item, index) {
         return React.createElement("li", { key: index },

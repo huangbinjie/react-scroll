@@ -6,9 +6,13 @@
     "noImplicitAny": true,
     "module": "commonjs",
     "sourceMap": true,
-    "target": "es6",
+    "target": "es5",
     "declaration": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "lib": [
+      "dom",
+      "es2015"
+    ]
   },
   "exclude": [
     "node_modules",

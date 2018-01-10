@@ -38,7 +38,7 @@ export class Projector {
       // 正常
       upperPlaceholderHeight = startItem.top
     } else {
-      // 如果起点不存在，则判断是猜测得来的。目前会导致这种情况的场景只有 resize，因为resize会清空缓存
+      // 如果起点不存在，则判断是猜测得来的。目前会导致这种情况的场景有 resize 和 快速滑动。他们都会清理缓存。
       upperPlaceholderHeight = this.scroller.state.upperPlaceholderHeight
       needAdjustment = true
     }
@@ -65,23 +65,23 @@ export class Projector {
     const anchorItemRect = this.cachedItemRect[this.anchorItem.index]
     // 滑动范围超过一个元素的高度之后再处理
     if (scrollTop > anchorItemRect.bottom) {
-      const itemIndex = this.cachedItemRect.findIndex(item => item ? item.bottom > scrollTop : false)
-      if (itemIndex === -1) {
+      const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
+      if (nextAnchorItem) {
+        // 正常滑动速度
+        const nextAnchorIndex = nextAnchorItem.index
+        this.startIndex = nextAnchorIndex > 2 ? nextAnchorIndex - 3 : 0
+        this.endIndex = this.startIndex + this.displayCount - 1
+        this.anchorItem.index = nextAnchorIndex
+        this.anchorItem.offset = nextAnchorItem.top
+      } else {
         // 滑的太快,读不出坐标,猜一个 itemIndex
         const cachedItemLength = this.cachedItemRect.length
         const unCachedDelta = scrollTop - this.cachedItemRect[cachedItemLength - 1].bottom
         // 缓存最后一个到当前anchor位置之间的item数量，暂时是猜测
         const guestimatedUnCachedCount = Math.ceil(unCachedDelta / this.averageHeight)
-        // this.anchorItem.index = this.endIndex + guestimatedUnCachedCount
         this.startIndex = this.endIndex + guestimatedUnCachedCount - 3
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
-      } else {
-        // 正常滑动速度
-        this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0
-        this.endIndex = this.startIndex + this.displayCount - 1
-        this.anchorItem.index = itemIndex
-        this.anchorItem.offset = this.cachedItemRect[itemIndex].top
       }
       this.next()
     }
@@ -92,24 +92,21 @@ export class Projector {
    */
   public down = () => {
     const scrollTop = this.scrollerDom.scrollTop
-    if (this.anchorItem.index > 3 && scrollTop < this.anchorItem.offset) {
+    if (scrollTop < this.anchorItem.offset) {
       const startItem = this.cachedItemRect[this.startIndex]
-      // const prevItem = this.cachedItemRect[this.startIndex - 1]
-      const itemIndex = this.cachedItemRect.findIndex(item => item ? item.top > scrollTop : false) - 1
-      if (!this.cachedItemRect[itemIndex - 3]) {
+      const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
+      if (this.cachedItemRect[nextAnchorItem.index - 3]) {
+        this.startIndex = nextAnchorItem.index > 2 ? nextAnchorItem.index - 3 : 0
+        this.endIndex = this.startIndex + this.displayCount - 1
+        this.anchorItem.index = nextAnchorItem.index
+        this.anchorItem.offset = nextAnchorItem.top
+      } else {
         const delta = this.anchorItem.offset - this.scrollerDom.scrollTop
-        // 往上快速滑动，假设 [1,2,3,undefined,4] 从4往上滑，如果是3和4之间，那么会拿到4的下标，4的下标恰好是 this.anchorItem.index - 3，
-        // 其他情况会拿到1-3的下标
         const guestimatedOutOfProjectorCount = Math.ceil(delta / this.averageHeight)
         const guestimatedStartIndex = this.startIndex - guestimatedOutOfProjectorCount
         this.startIndex = guestimatedStartIndex < 0 ? 0 : guestimatedStartIndex
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
-      } else {
-        this.startIndex = itemIndex > 2 ? itemIndex - 3 : 0
-        this.endIndex = this.startIndex + this.displayCount - 1
-        this.anchorItem.index = itemIndex
-        this.anchorItem.offset = this.cachedItemRect[itemIndex].top
       }
       this.next()
     }
