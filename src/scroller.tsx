@@ -92,7 +92,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
 
   public render() {
     return (
-      <div id="c" ref={div => this.divDom = div!} style={{ overflow: "scroll", WebkitOverflowScrolling: "touch", overflowAnchor: "none", height: this.props.containerHeight }} onScroll={this.onScroll}>
+      <div className={this.props.className || ""} ref={div => this.divDom = div!} style={{ overflow: "scroll", WebkitOverflowScrolling: "touch", overflowAnchor: "none", height: this.props.containerHeight }} onScroll={this.onScroll}>
         <div ref={div => this.upperContentDom = div!} style={{ height: this.state.upperPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) =>
           <Item
