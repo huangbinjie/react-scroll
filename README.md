@@ -1,14 +1,20 @@
 # react-iscroller
 
-react 的无限滚动方案
+an effective react infinite scroll container. inspired by twitter's [blog](http://itsze.ro/blog/2017/04/09/infinite-list-and-react.html).
 
-## 安装
+## Motivation
+
+As the pwa becomes more popular, the performance and use experience is becoming more important. And infinite scroll is almost the most important part in a pwa project. But i found the results by searching `react infinite scroller` on github are not my needs. Fortunately, I found this article of [twitter](https://medium.com/@paularmstrong/twitter-lite-and-high-performance-react-progressive-web-apps-at-scale-d28a00e780a3) on medium by chance. That's i want. So I tried to implement one.
+
+## Install
 
 ```sh
 npm i react-iscroller
 ```
 
-## 使用
+## Example
+
+it's simple to use as follow:
 
 ```ts
 import { InfiniteScroller } from "react-iscroller"
@@ -21,40 +27,61 @@ return <InfiniteScroller
   onRenderCell={this.renderCell}/>
 ```
 
-## props
+## Feature
+
++ hight performance
+  ![performance](https://pic2.zhimg.com/80/v2-492eaef1b72348661339ce5d4fdaf953_hd.jpg)
++ infinite load
++ lazy load
++ pure component
+  ![pure_component](https://pic3.zhimg.com/v2-b373e12909006ba6d79d6ed1a03519f5_b.gif)
++ cache
+  ![cache](https://pic3.zhimg.com/v2-284a990951aed1f6ec0fe739e4ad983c_b.gif)
++ resize
+  ![resize](https://pic1.zhimg.com/v2-d7c4e657c267bc5ee99f93f1d503ed66_b.gif)
+
+## Online Demo
+
+please visite my [blog](corol.me/slack) and debug the dom, then you can see the all feature as i billed:smile:
+
+## Props
 
 ### containerHeight(required): number
 
-scroller 的高度
+the height of the wrapper of the infinite scroller
 
-### items(required): any[]
+### className(optional): string
 
-你的数据
+className attatched to scroller.
+
+### items(required): object[]
+
+your data
 
 ### itemKey(required): string
 
-item 的 id。 使用 itemKey 帮助 react 实现 pure component。
+identity of your data. help scroller implements `pure component`.
 
 ### itemAverageHeight(required): number
 
-如果你的 item 高度都相同那这里就填 item 的高度。如果是动态高度，尽量输入最平均的那个高度，如果还是没法确定，直接用 item 的最小高度。平均高度不影响 scroller 运行，只会影响显示数量。
+As the twitter blog mentioned, averageHeight can help scroller to guesstimate the buffer height. Usually is your item height.
 
 ### onRenderCell(required): (item: any, index: number) => ReactNode
 
-当每条 item 渲染的时候会调用这个函数
+call when trying to render an item.
 
 ### cache(optional): Cache[]
 
-如果需要看到哪回到哪的功能，你必须用你的状态管理保存缓存。如果不填，不影响 scroller 正常运行。
+cache the position of rendered item. your might need provide this props when you want go back to the last place.
 
 ### initialScrollTop(optional): number
 
-再组件加载的时候滑动到 `initialScrollTop` 指定的位置。一般配合缓存滑动到上次看到的位置。如果不提供缓存也可以，但是位置是猜测的。
+set scroller's scrollTop to `initialScrollTop` after first render. if you had provied `cache` and `initialScrollTop`, your can get the last interface before unmount of scroller component.
 
 ### onScroll(optional): (scrollerDom: HTMLDivElement) => void
 
-滑动的时候会调用此函数，可以从这个函数里拿到 scroller 的原生 dom.
+called when scroller is scrolling.
 
 ### onEnd?: () => void
 
-滑动到底部的时候会触发此函数，可以在这里更新数据
+called after anchor had arrived bottom.
