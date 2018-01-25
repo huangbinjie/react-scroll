@@ -45,7 +45,7 @@ return <InfiniteScroller
 
 ## Online Demo
 
-please visite my [blog](corol.me/slack) and debug the dom, then you can see the all feature what i claimed:smile:
+please visite my [blog](http://www.corol.me/slack) and debug the dom, then you can see the all feature what i claimed:smile:
 
 ## Props
 
