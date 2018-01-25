@@ -1,10 +1,10 @@
 # react-iscroller
 
-an effective react infinite scroll container. inspired by twitter's [blog](http://itsze.ro/blog/2017/04/09/infinite-list-and-react.html).
+An effective react infinite scroll container. inspired by twitter's [blog](http://itsze.ro/blog/2017/04/09/infinite-list-and-react.html).
 
 ## Motivation
 
-As the pwa becomes more popular, the performance and use experience is becoming more important. And infinite scroll is almost the most important part in a pwa project. But i found the results by searching `react infinite scroller` on github are not my needs. Fortunately, I found this article of [twitter](https://medium.com/@paularmstrong/twitter-lite-and-high-performance-react-progressive-web-apps-at-scale-d28a00e780a3) on medium by chance. That's i want. So I tried to implement one.
+As the pwa(progressive web app) becoming more popular, the performance and user experience are more and more important. And infinite scroll is almost the most important part within a pwa project. But i found the results by searching `react infinite scroller` on github are not my needs. Fortunately, I found this article of [twitter](https://medium.com/@paularmstrong/twitter-lite-and-high-performance-react-progressive-web-apps-at-scale-d28a00e780a3) on medium by chance. That's i want. So I tried to implement one.
 
 ## Install
 
@@ -14,7 +14,7 @@ npm i react-iscroller
 
 ## Example
 
-it's simple to use as follow:
+It's simple to use as follow:
 
 ```ts
 import { InfiniteScroller } from "react-iscroller"
@@ -42,7 +42,7 @@ return <InfiniteScroller
 
 ## Online Demo
 
-please visite my [blog](corol.me/slack) and debug the dom, then you can see the all feature as i billed:smile:
+please visite my [blog](corol.me/slack) and debug the dom, then you can see the all feature what i claimed:smile:
 
 ## Props
 
@@ -64,11 +64,11 @@ identity of your data. help scroller implements `pure component`.
 
 ### itemAverageHeight(required): number
 
-As the twitter blog mentioned, averageHeight can help scroller to guesstimate the buffer height. Usually is your item height.
+As the twitter blog mentioned, averageHeight can help scroller to guesstimate the buffer height. Usually your item height.
 
 ### onRenderCell(required): (item: any, index: number) => ReactNode
 
-call when trying to render an item.
+called when trying to render an item.
 
 ### cache(optional): Cache[]
 
