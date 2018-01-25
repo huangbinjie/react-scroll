@@ -34,10 +34,13 @@ return <InfiniteScroller
 + infinite load
 + lazy load
 + [pure component](https://pic3.zhimg.com/v2-b373e12909006ba6d79d6ed1a03519f5_b.gif)
+
 ![pure_component](https://pic3.zhimg.com/v2-b373e12909006ba6d79d6ed1a03519f5_b.gif)
 + [cache](https://pic3.zhimg.com/v2-284a990951aed1f6ec0fe739e4ad983c_b.gif)
+
 ![cache](https://pic3.zhimg.com/v2-284a990951aed1f6ec0fe739e4ad983c_b.gif)
 + [resize](https://pic1.zhimg.com/v2-d7c4e657c267bc5ee99f93f1d503ed66_b.gif)
+
 ![resize](https://pic1.zhimg.com/v2-d7c4e657c267bc5ee99f93f1d503ed66_b.gif)
 
 ## Online Demo
