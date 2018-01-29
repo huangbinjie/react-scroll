@@ -11,9 +11,9 @@ type State = {
 
 
 class App extends React.Component<{}, State> {
-  state: State = { messages: fetchLocalMessage() }
+  state: State = { messages: [] }
   componentDidMount() {
-    // fetchData().then(messages => this.setState({ messages }))
+    fetchData().then(messages => this.setState({ messages }))
   }
   render() {
     return (
@@ -23,12 +23,17 @@ class App extends React.Component<{}, State> {
         items={this.state.messages}
         itemKey="id"
         onRenderCell={this.renderCell}
+        onEnd={this.onEnd}
       />
     )
   }
 
   renderCell(item: any, index: number) {
     return <li key={index}>{item.content}<span style={{ color: "red" }}>{index}</span></li>
+  }
+
+  onEnd = () => {
+    fetchData().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
   }
 }
 
