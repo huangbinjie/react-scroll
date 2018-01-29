@@ -8,7 +8,7 @@ export function fetchLocalMessage() {
 
 export function fetchData() {
   const maxLength = MESSAGES.length
-  const responseData = Array(100000).fill(0).map(() => ({ id: generate(), content: genTextOrImgage() }))
+  const responseData = Array(100).fill(0).map(() => ({ id: generate(), content: genTextOrImgage() }))
   return Promise.resolve(responseData)
 }
 
