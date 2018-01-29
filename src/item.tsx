@@ -4,7 +4,6 @@ import { Projector } from "./projector"
 export type Props = {
   item: any,
   itemIndex: number,
-  resizing: boolean
   onRenderCell: (item?: any, index?: number) => React.ReactNode
   upperPlaceholderHeight: number,
   needAdjustment: boolean
