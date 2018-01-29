@@ -1,7 +1,6 @@
 import * as React from "react"
 import { Projector, Cache } from "./projector"
 import { Item } from "./item"
-// import { debounce } from "lodash"
 
 export type Props<T= {}> = {
   cache?: Cache[],
@@ -40,6 +39,10 @@ export class InfiniteScroller extends React.Component<Props, State> {
   private width: number
   private resizing = false
 
+  /**
+   * tell projector to project while got asynchronous data
+   * @param nextProps 
+   */
   public componentWillReceiveProps(nextProps: Props) {
     this.hasBottomTouched = false
     this.projector.next(nextProps.items)
@@ -50,7 +53,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
   }
 
   /**
-   * 第一次加载空数组，为了拿到容器的dom：divDom
+   * first mount: get the native dom
    */
   public componentDidMount() {
     this.width = this.divDom.clientWidth
@@ -69,10 +72,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
       })
     })
 
-    // this.down = debounce(this.projector.down, 100)
-    // this.up = debounce(this.projector.up, 50)
-
-    // 如果初始化的时候 items 不是空数组，则要通知投影仪渲染。异步的情况下，receiveProps 通知投影仪渲染
+    // tell projector to project for synchronous data
     if (this.props.items.length > 0) {
       this.hasBottomTouched = false
       this.projector.next()
@@ -91,8 +91,9 @@ export class InfiniteScroller extends React.Component<Props, State> {
   }
 
   public render() {
+    const style = { overflow: "scroll" as "scroll", WebkitOverflowScrolling: "touch", overflowAnchor: "none", height: this.props.containerHeight }
     return (
-      <div className={this.props.className || ""} ref={div => this.divDom = div!} style={{ overflow: "scroll", WebkitOverflowScrolling: "touch", overflowAnchor: "none", height: this.props.containerHeight }} onScroll={this.onScroll}>
+      <div className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
         <div ref={div => this.upperContentDom = div!} style={{ height: this.state.upperPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) =>
           <Item
@@ -103,7 +104,6 @@ export class InfiniteScroller extends React.Component<Props, State> {
             itemIndex={this.projector.startIndex + index}
             upperPlaceholderHeight={this.state.upperPlaceholderHeight}
             onRenderCell={this.props.onRenderCell}
-            resizing={this.resizing}
           />
         )}
         <div style={{ height: this.state.underPlaceholderHeight }}></div>
@@ -112,14 +112,12 @@ export class InfiniteScroller extends React.Component<Props, State> {
   }
 
   /**
-   * 纠正缓冲区
-   * 如果上方填充高度是猜测得来的，那加载之后的新的item是的top也是基于猜测得来的。
-   * 如何知道上方是猜测得来的，可以看 needAdjust 是否为 true。
-   * 第一次 next，填充高度不变，告诉之后需要调整。
-   * 第一次 render，子节点发现需要调整，刷新自己的缓存。
-   * 第一次 didupdate，发现需要调整，根据之前的高度减去滑过的item的高度(这些高度就是刚缓存进去的)
-   * 第二次 render，子节点发现还是需要调整，根据刚刚拿到的正确的填充高度再刷新一次缓存。最后一个子节点把 needAdjustment 改成 false。
-   * 第二次didupdate，不需要调整
+   * if upperHeight is guesstimated(needAdjustment = true), we need to adjust upperHeight. this is step:
+   * first next. project new sliced items. change needAdjustment to true.
+   * first render. tell Item to update cache.
+   * first didupdate. adjust upperHeight.
+   * second render. update cache upon the correct upperHeight.
+   * second didupdate. nothing happeded.
    */
   public adjustUpperPlaceholderHieght() {
     if (this.needAdjustment) {
@@ -143,7 +141,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
             const currentAnchor = this.projector.cachedItemRect[this.projector.startIndex + 3]
             const anchorDelta = anchor.offset - currentAnchor.top
             const nextScrollTop = this.divDom.scrollTop - anchorDelta
-            // 让滚动位置保持在描点中
+            // keep scrollTop whthin anchor item.
             if (nextScrollTop < currentAnchor.top) {
               this.divDom.scrollTop = currentAnchor.top
             } else if (nextScrollTop > currentAnchor.bottom) {
@@ -171,9 +169,10 @@ export class InfiniteScroller extends React.Component<Props, State> {
 
 
   /**
-   * 缓存更新之前的高度减去缓存之后的高度得到填充区需要修补的高度
-   * @param cache 描点的缓存坐标
-   * @param height 填充区的高度，也是第一个 item 的 top
+   * if sliding direction is down, before height minus the height you just slipped.
+   * if sliding direction is up, scrollTop minus buffer height.
+   * @param cache cached anchor position
+   * @param height upperHeight
    * 
    */
   public computeUpperPlaceholderHeight(cache: Cache, height: number): number {
@@ -182,29 +181,22 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const prevStartIndex = projector.anchorItem.index > 2 ? projector.anchorItem.index - 3 : 0
     const scrollThroughItemCount = prevStartIndex - projector.startIndex
     this.isAdjusting = true
-    if (scrollThroughItemCount < 0) {
-      const scrollThroughItem = projector.cachedItemRect.slice(projector.startIndex, projector.startIndex + 3)
-      const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
-      const finalHeight = scrollTop - scrollThroughItemDistance
-      return finalHeight
-    } else if (scrollThroughItemCount > 0) {
-      const scrollThroughItem = projector.cachedItemRect.slice(projector.startIndex, projector.startIndex + scrollThroughItemCount)
-      const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
-      const finalHeight = height - scrollThroughItemDistance
-      // 有可能是负数
-      return finalHeight
-    }
-    return height
+    const prevStartItem = projector.cachedItemRect[prevStartIndex]
+    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.state.upperPlaceholderHeight : scrollTop
+    const endIndex = prevStartItem ? prevStartIndex : projector.startIndex + 3
+    const scrollThroughItem = projector.cachedItemRect.slice(projector.startIndex, endIndex)
+    const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
+    return upperHeight - scrollThroughItemDistance
   }
 
   public onScroll = () => {
     const newScrollTop = this.divDom.scrollTop
     this.props.onScroll!(this.divDom)
     if (newScrollTop < this.scrollTop) {
-      // 手往下滑,屏幕往上滑
+      // hands down, viewport up
       this.projector.down()
     } else if (newScrollTop > this.scrollTop) {
-      // 往上滑,屏幕往下滑
+      // hands up, viewport down
       this.projector.up()
     }
     this.scrollTop = newScrollTop
