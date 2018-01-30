@@ -1,3 +1,7 @@
+/**
+ *  Projector.
+ *  used for calculate anchor and new items
+ */
 import { InfiniteScroller } from "./scroller"
 
 export class Projector {
@@ -94,7 +98,7 @@ export class Projector {
         this.anchorItem.index = nextAnchorItem.index
         this.anchorItem.offset = nextAnchorItem.top
       } else {
-        const guesstimatedAnchorIndex = Math.ceil(this.scrollerDom.scrollTop / this.anchorItem.offset * this.anchorItem.index)
+        const guesstimatedAnchorIndex = Math.ceil(this.scrollerDom.scrollTop / this.anchorItem.offset * this.anchorItem.index) - 1
         this.startIndex = guesstimatedAnchorIndex > 2 ? guesstimatedAnchorIndex - 3 : guesstimatedAnchorIndex
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0

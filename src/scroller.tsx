@@ -1,3 +1,8 @@
+/**
+ * Scroller.
+ * a component to render data base on the paramater(upperHeight, newItems, underHeight) that received from Projector.
+ * scroller also has an adjustment strategy to adjust upperHeight.
+ */
 import * as React from "react"
 import { Projector, Cache } from "./projector"
 import { Item } from "./item"
