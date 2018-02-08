@@ -41,15 +41,15 @@ export class Item extends React.Component<Props> {
 
     const rect = this.dom.getBoundingClientRect()
     if (prevItem) {
-      // 当前item不存在但是前一个存在
+      // if previous item exists, use prevItem.bottom as the upperHeight
       const bottom = prevItem.bottom + rect.height
       const top = prevItem.bottom
-      cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height, needAdjustment: false }
+      cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     } else {
-      // 当前 item 不存在，且前一个也不存在
+      // if previous item doesn't exist, it's the first item, so upperHeight equals upperPlaceholderHeight
       const bottom = upperPlaceholderHeight + rect.height
       const top = upperPlaceholderHeight
-      cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height, needAdjustment: false }
+      cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     }
   }
 }

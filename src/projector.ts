@@ -32,16 +32,9 @@ export class Projector {
 
     const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
     const startItem = this.cachedItemRect[this.startIndex]
-    let upperPlaceholderHeight = 0
-    let needAdjustment = false
-    if (startItem) {
-      // normal
-      upperPlaceholderHeight = startItem.top
-    } else {
-      // there are two case go this brunch：1、resize。2、quickly slipping。
-      upperPlaceholderHeight = this.upperHeight
-      needAdjustment = true
-    }
+    // there are two case should adjust: 1、resize。2、quickly slipping。
+    const needAdjustment = startItem ? false : true
+    const upperPlaceholderHeight = startItem ? startItem.top : this.upperHeight
 
     const cachedItemRectLength = this.cachedItemRect.length
     const endIndex = cachedItemRectLength === 0 ? this.endIndex : cachedItemRectLength
@@ -114,4 +107,4 @@ export class Projector {
 }
 
 export type Callback = (projectedItems: any[], upperPlaceholderHeight: number, underPlaceholderHeight: number, needAdjustment: boolean) => void
-export type Cache = { index: number, top: number, bottom: number, height: number, needAdjustment?: boolean }
+export type Cache = { index: number, top: number, bottom: number, height: number }
