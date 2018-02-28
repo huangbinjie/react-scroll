@@ -103,8 +103,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
       overflow: "scroll" as "scroll",
       WebkitOverflowScrolling: "touch",
       overflowAnchor: "none",
-      height: this.props.containerHeight,
-      border: "1px solid red"
+      height: this.props.containerHeight
     }
     return (
       <div className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
