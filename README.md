@@ -31,8 +31,10 @@ return <InfiniteScroller
 
 + hight performance
 ![performance](https://pic2.zhimg.com/80/v2-492eaef1b72348661339ce5d4fdaf953_hd.jpg)
+
 + infinite load
 + lazy load
++ dynamic height
 + [pure component](https://pic3.zhimg.com/v2-b373e12909006ba6d79d6ed1a03519f5_b.gif)
 
 ![pure_component](https://pic3.zhimg.com/v2-b373e12909006ba6d79d6ed1a03519f5_b.gif)
@@ -69,9 +71,9 @@ identity of your data. help scroller implements `pure component`.
 
 As the twitter blog mentioned, averageHeight can help scroller to guesstimate the buffer height. Usually your item height.
 
-### onRenderCell(required): (item: any, index: number) => ReactNode
+### onRenderCell(required): (item: any, itemIndex: number, measure: () => void) => ReactNode
 
-called when trying to render an item.
+called when trying to render an item. if you want to force scroller to update cache(eg. after image loaded), you can call this method.
 
 ### cache(optional): Cache[]
 
