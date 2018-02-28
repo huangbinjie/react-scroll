@@ -15,7 +15,7 @@ export type Props<T= {}> = {
   items: T[]
   itemKey: string
   initialScrollTop?: number
-  onRenderCell: (item?: T, index?: number) => React.ReactNode
+  onRenderCell: (item?: T, index?: number, measure?: () => void) => React.ReactNode
   onScroll?: (dom: HTMLDivElement) => void
   onEnd?: () => void
 }
@@ -42,7 +42,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
   private scrollTop = 0
   private projector: Projector
   private width: number
-  private resizing = false
+  private isMeasuring = false
 
   /**
    * tell projector to project while got asynchronous data
@@ -93,17 +93,19 @@ export class InfiniteScroller extends React.Component<Props, State> {
     window.addEventListener("resize", () => {
       if (this.divDom.clientWidth !== this.width) {
         this.width = this.divDom.clientWidth
-        this.resizing = true
-        this.projector.cachedItemRect.length = 0
-        this.needAdjustment = true
-        this.isAdjusting = false
-        this.setState({})
+        this.measure()
       }
     })
   }
 
   public render() {
-    const style = { overflow: "scroll" as "scroll", WebkitOverflowScrolling: "touch", overflowAnchor: "none", height: this.props.containerHeight }
+    const style = {
+      overflow: "scroll" as "scroll",
+      WebkitOverflowScrolling: "touch",
+      overflowAnchor: "none",
+      height: this.props.containerHeight,
+      border: "1px solid red"
+    }
     return (
       <div className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
         <div ref={div => this.upperContentDom = div!} style={{ height: this.state.upperPlaceholderHeight }}></div>
@@ -112,6 +114,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
             key={this.props.itemKey ? item[this.props.itemKey] : index}
             projector={this.projector}
             item={item}
+            measure={this.measure}
             needAdjustment={this.needAdjustment}
             itemIndex={this.projector.startIndex + index}
             upperPlaceholderHeight={this.state.upperPlaceholderHeight}
@@ -121,6 +124,42 @@ export class InfiniteScroller extends React.Component<Props, State> {
         <div style={{ height: this.state.underPlaceholderHeight }}></div>
       </div>
     )
+  }
+
+  public measure = () => {
+    this.projector.cachedItemRect.length = 0
+    this.isMeasuring = true
+    this.needAdjustment = true
+    this.isAdjusting = false
+    this.adjustUpperPlaceholderHieght()
+  }
+
+  /**
+   * During resizing and remeasuring, items should be minimal flicker,
+   * so we need to keep scrollTop within anchor item.
+   */
+  public keepScrollTopWithinAnchor() {
+    const anchorOffset = this.projector.anchorItem.offset
+    const currentAnchor = this.projector.cachedItemRect[this.projector.startIndex + 3]
+    const anchorDelta = anchorOffset - currentAnchor.top
+    const nextScrollTop = this.divDom.scrollTop - anchorDelta
+    if (nextScrollTop < currentAnchor.top) {
+      this.compatibleScrollTo(currentAnchor.top)
+    } else if (nextScrollTop > currentAnchor.bottom) {
+      this.compatibleScrollTo(currentAnchor.bottom)
+    } else {
+      this.compatibleScrollTo(nextScrollTop)
+    }
+  }
+
+  /**
+   * https://popmotion.io/blog/20170704-manually-set-scroll-while-ios-momentum-scroll-bounces/
+   * In the scroll momentum period, can not modify the scrollTop of the container in ios, it's a bug.
+   */
+  public compatibleScrollTo(scrollTop: number) {
+    (this.divDom.style as any)["-webkit-overflow-scrolling"] = "auto"
+    this.divDom.scrollTop = scrollTop > 0 ? scrollTop : 0;
+    (this.divDom.style as any)["-webkit-overflow-scrolling"] = "touch"
   }
 
   /**
@@ -134,41 +173,26 @@ export class InfiniteScroller extends React.Component<Props, State> {
   public adjustUpperPlaceholderHieght() {
     this.isAdjusting = true
     const cachedItemRect = this.projector.cachedItemRect
-    const anchor = this.projector.anchorItem
-    const cachedAnchorItem = cachedItemRect[anchor.index]
-    const startItem = this.projector.cachedItemRect[this.projector.startIndex]
-    const finalHeight = this.computeUpperPlaceholderHeight(cachedAnchorItem, startItem.top)
-    const upperPlaceholderHeight = startItem.index === 0 ? 0 : finalHeight < 0 ? 0 : finalHeight
+    const startIndex = this.projector.startIndex
+    const finalHeight = this.computeUpperPlaceholderHeight(this.state.upperPlaceholderHeight)
+    const upperPlaceholderHeight = startIndex === 0 ? 0 : finalHeight < 0 ? 0 : finalHeight
     const scrollTop = this.divDom.scrollTop
 
     this.setState({ upperPlaceholderHeight }, () => {
-      if (startItem.index > 0) {
-        if (this.resizing) {
-          const currentAnchor = this.projector.cachedItemRect[this.projector.startIndex + 3]
-          const anchorDelta = anchor.offset - currentAnchor.top
-          const nextScrollTop = this.divDom.scrollTop - anchorDelta
-          // keep scrollTop within anchor item.
-          if (nextScrollTop < currentAnchor.top) {
-            this.divDom.scrollTop = currentAnchor.top
-          } else if (nextScrollTop > currentAnchor.bottom) {
-            this.divDom.scrollTop = currentAnchor.bottom
-          } else {
-            this.divDom.scrollTop = nextScrollTop
-          }
-
-          this.resizing = false
+      if (startIndex > 0) {
+        if (this.isMeasuring) {
+          this.keepScrollTopWithinAnchor()
+          this.isMeasuring = false
         } else {
-          if (finalHeight < 0) this.divDom.scrollTop = scrollTop - finalHeight
+          if (finalHeight < 0) {
+            this.compatibleScrollTo(scrollTop - finalHeight)
+          }
         }
       } else {
-        // https://popmotion.io/blog/20170704-manually-set-scroll-while-ios-momentum-scroll-bounces/
-        (this.divDom.style as any)["-webkit-overflow-scrolling"] = "auto"
-        this.divDom.scrollTop = scrollTop - finalHeight;
-        (this.divDom.style as any)["-webkit-overflow-scrolling"] = "touch"
+        this.compatibleScrollTo(scrollTop - finalHeight)
       }
 
-      this.projector.anchorItem = { index: this.projector.startIndex + 3, offset: this.projector.cachedItemRect[this.projector.startIndex + 3].top }
-
+      this.projector.anchorItem = { index: startIndex + 3, offset: cachedItemRect[startIndex + 3].top }
     })
   }
 
@@ -180,7 +204,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
    * @param height upperHeight
    * 
    */
-  public computeUpperPlaceholderHeight(cache: Cache, height: number): number {
+  public computeUpperPlaceholderHeight(height: number): number {
     const projector = this.projector
     const scrollTop = this.divDom.scrollTop
     const prevStartIndex = projector.anchorItem.index > 2 ? projector.anchorItem.index - 3 : 0
