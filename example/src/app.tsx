@@ -3,23 +3,25 @@ import { render } from 'react-dom'
 
 import { InfiniteScroller } from '../../src/scroller'
 
-import { fetchLocalMessage, fetchData, fetchDataSync } from './api'
+import { fetchDataWithImageAndText, fetchDataWithText } from './api'
 
 type State = {
+  innerHeight: number
   messages: { id: string, content: string }[]
 }
 
 
 class App extends React.Component<{}, State> {
-  state: State = { messages: [] }
+  state: State = { innerHeight: window.innerHeight, messages: [] }
   componentDidMount() {
-    fetchData().then(messages => this.setState({ messages }))
+    // fetchDataWithImageAndText().then(messages => this.setState({ messages }))
+    fetchDataWithText().then(messages => this.setState({ messages }))
   }
   render() {
     return (
       <InfiniteScroller
-        itemAverageHeight={22}
-        containerHeight={window.innerHeight}
+        itemAverageHeight={66}
+        containerHeight={this.state.innerHeight}
         items={this.state.messages}
         itemKey="id"
         onRenderCell={this.renderCell}
@@ -28,12 +30,15 @@ class App extends React.Component<{}, State> {
     )
   }
 
-  renderCell(item: any, index: number) {
-    return <li key={index}>{item.content}<span style={{ color: "red" }}>{index}</span></li>
+  renderCell(item: any, index: number, measure: () => void) {
+    return <li key={index} style={{ listStyle: "none" }}>
+      <div><span style={{ color: "red" }}>{index}</span>{item.content}</div>
+      {item.image ? <img onLoad={measure} src={item.image} style={{ maxWidth: "100%" }} /> : null}
+    </li>
   }
 
   onEnd = () => {
-    fetchData().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
+    fetchDataWithText().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
   }
 }
 
