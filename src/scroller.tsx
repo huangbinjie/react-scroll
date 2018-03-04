@@ -197,8 +197,9 @@ export class InfiniteScroller extends React.Component<Props, State> {
 
 
   /**
-   * if sliding direction is down, before height minus the height you just slipped.
-   * if sliding direction is up, scrollTop minus buffer height.
+   * if slide down(eg. slide 52 to 51, scrollThroughItemCount is positive), upperHeight equals to state.upperHeight.
+   * if slide up(eg. slide 52 to 53, scrollThroughItemCount is negative), upperHeight equals to current scrollTop.
+   * then upperHeight minus scrollThroughItemDistance, we can get the actural height witch should be render.
    * @param cache cached anchor position
    * @param height upperHeight
    * 
@@ -209,7 +210,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const prevStartIndex = projector.anchorItem.index > 2 ? projector.anchorItem.index - 3 : 0
     const scrollThroughItemCount = prevStartIndex - projector.startIndex
     const prevStartItem = projector.cachedItemRect[prevStartIndex]
-    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.state.upperPlaceholderHeight : scrollTop
+    const upperHeight = scrollThroughItemCount >= 0 ? height : scrollTop
     const endIndex = prevStartItem ? prevStartIndex : projector.startIndex + 3
     const scrollThroughItem = projector.cachedItemRect.slice(projector.startIndex, endIndex)
     const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
