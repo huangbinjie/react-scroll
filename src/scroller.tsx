@@ -130,7 +130,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
     this.isMeasuring = true
     this.needAdjustment = true
     this.isAdjusting = false
-    this.adjustUpperPlaceholderHieght()
+    this.setState({})
   }
 
   /**
@@ -210,7 +210,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const prevStartIndex = projector.anchorItem.index > 2 ? projector.anchorItem.index - 3 : 0
     const scrollThroughItemCount = prevStartIndex - projector.startIndex
     const prevStartItem = projector.cachedItemRect[prevStartIndex]
-    const upperHeight = scrollThroughItemCount >= 0 ? height : scrollTop
+    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? height : scrollTop
     const endIndex = prevStartItem ? prevStartIndex : projector.startIndex + 3
     const scrollThroughItem = projector.cachedItemRect.slice(projector.startIndex, endIndex)
     const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
