@@ -1,4 +1,5 @@
 import * as React from "react"
+import { addListener, removeListener } from "resize-detector"
 import { Projector, Cache } from "./projector"
 import { BufferHeight } from "./scroller"
 
@@ -6,14 +7,14 @@ export type Props = {
   bufferHeight: BufferHeight
   item: any
   itemIndex: number
-  measure: (upperHeight?: number, underHeight?: number) => void
+  measure: (itemIndex: number, delta: number) => void
   needAdjustment: boolean
   onRenderCell: (item: any, index: number, measure: () => void) => React.ReactNode
   projector: Projector
 }
 
 export class Item extends React.Component<Props> {
-  public dom: HTMLDivElement
+  public dom!: HTMLDivElement
 
   public componentWillReceiveProps(nextProps: Props) {
     if (nextProps.needAdjustment) {
@@ -27,6 +28,11 @@ export class Item extends React.Component<Props> {
 
   public componentDidMount() {
     this.setCache(this.props, this.props.itemIndex)
+    addListener(this.dom, this.measure)
+  }
+
+  public componentWillUnmount() {
+    removeListener(this.dom, this.measure)
   }
 
   public render() {
@@ -62,22 +68,22 @@ export class Item extends React.Component<Props> {
     if (cachedItemRect && curItemRect.height !== cachedItemRect.height) {
       const anchorIndex = projector.anchorItem.index
       const delta = curItemRect.height - cachedItemRect.height
-      let upperHeight, underHeight
-      if (itemIndex <= anchorIndex) {
-        upperHeight = bufferHeight.upperPlaceholderHeight - delta
-        underHeight = bufferHeight.underPlaceholderHeight
-        if (upperHeight < 0) {
-          upperHeight = bufferHeight.upperPlaceholderHeight
-        }
-      } else {
-        upperHeight = bufferHeight.upperPlaceholderHeight
-        underHeight = bufferHeight.underPlaceholderHeight - delta
-        if (underHeight < 0) {
-          underHeight = bufferHeight.underPlaceholderHeight
-        }
-      }
+      // let upperHeight, underHeight
+      // if (itemIndex <= anchorIndex) {
+      //   upperHeight = bufferHeight.upperPlaceholderHeight - delta
+      //   underHeight = bufferHeight.underPlaceholderHeight
+      //   // if (upperHeight <= 0) {
+      //   //   upperHeight *= -1
+      //   // }
+      // } else {
+      //   upperHeight = bufferHeight.upperPlaceholderHeight
+      //   underHeight = bufferHeight.underPlaceholderHeight - delta
+      //   // if (underHeight <= 0) {
+      //   //   underHeight *= -1
+      //   // }
+      // }
       // console.log(anchorIndex, itemIndex, delta, bufferHeight.upperPlaceholderHeight, upperHeight, bufferHeight.underPlaceholderHeight, underHeight)
-      this.props.measure(upperHeight, underHeight)
+      this.props.measure(itemIndex, delta)
     }
   }
 

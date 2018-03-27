@@ -20,7 +20,7 @@ class App extends React.Component<{}, State> {
   render() {
     return (
       <InfiniteScroller
-        bufferSize={3}
+        bufferSize={1}
         itemAverageHeight={66}
         containerHeight={this.state.innerHeight}
         items={this.state.messages}
@@ -34,7 +34,7 @@ class App extends React.Component<{}, State> {
   renderCell = (item: any, index: number, measure: () => void) => {
     return <li key={index} style={{ listStyle: "none" }}>
       <div><span style={{ color: "red" }}>{index}</span>{item.content}</div>
-      {item.image ? <img onLoad={this.onImageLoad(item, measure)} src={item.image} style={{ display: item.shouldRemeasure ? "none" : "block" }} /> : null}
+      {item.image ? <img src={item.image} /> : null}
     </li>
   }
 

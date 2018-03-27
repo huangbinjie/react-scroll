@@ -9,10 +9,11 @@ export class Projector {
   public endIndex = 0
   public anchorItem = { index: 0, offset: 0 }
 
-  private callback: Callback
+  private callback: Callback = () => { }
   private guesstimatedItemCountPerPage: number
   private displayCount: number
   private upperHeight = 0
+  private underHeight = 0
 
   constructor(
     private scrollerDom: HTMLDivElement,
@@ -47,12 +48,12 @@ export class Projector {
     const startItem = this.cachedItemRect[this.startIndex]
     // there are two case should adjust: 1、resize。2、quickly slipping。
     const needAdjustment = startItem ? false : true
-    const upperPlaceholderHeight = startItem ? startItem.top : this.upperHeight
+    // const upperPlaceholderHeight = startItem ? startItem.top : this.upperHeight
 
-    const underHeight = this.bufferHeight.underPlaceholderHeight === 0 ? this.guesstRestBottomHeight() : this.bufferHeight.underPlaceholderHeight
+    const underHeight = this.underHeight <= 0 ? this.guesstRestBottomHeight() : this.underHeight
 
 
-    this.callback(projectedItems, upperPlaceholderHeight, underHeight, needAdjustment)
+    this.callback(projectedItems, this.upperHeight, underHeight, needAdjustment)
   }
 
   /**
@@ -65,10 +66,13 @@ export class Projector {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
       if (nextAnchorItem) {
         const nextAnchorIndex = nextAnchorItem.index
+        const nextAnchorOffset = nextAnchorItem.top
         this.startIndex = nextAnchorIndex >= this.bufferSize ? nextAnchorIndex - this.bufferSize : 0
         this.endIndex = this.startIndex + this.displayCount - 1
+        this.upperHeight = this.cachedItemRect[this.startIndex].top
+        this.underHeight -= nextAnchorOffset - this.anchorItem.offset
         this.anchorItem.index = nextAnchorIndex
-        this.anchorItem.offset = nextAnchorItem.top
+        this.anchorItem.offset = nextAnchorOffset
       } else {
         const cachedItemLength = this.cachedItemRect.length
         const unCachedDelta = scrollTop - this.cachedItemRect[cachedItemLength - 1].bottom
@@ -77,6 +81,7 @@ export class Projector {
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
         this.upperHeight = scrollTop
+        this.underHeight -= this.anchorItem.offset - scrollTop
       }
       this.next()
     }
@@ -90,20 +95,43 @@ export class Projector {
     if (scrollTop < this.anchorItem.offset) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)!
       const nextStartIndex = nextAnchorItem.index - this.bufferSize
-      if (this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
+      if (nextStartIndex < this.anchorItem.index && this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
         this.startIndex = nextAnchorItem.index >= this.bufferSize ? nextAnchorItem.index - this.bufferSize : 0
         this.endIndex = this.startIndex + this.displayCount - 1
         this.anchorItem.index = nextAnchorItem.index
         this.anchorItem.offset = nextAnchorItem.top
+        this.upperHeight = this.cachedItemRect[this.startIndex].top
+        this.underHeight -= nextAnchorItem.top - this.anchorItem.offset
       } else {
         const guesstimatedAnchorIndex = Math.floor(Math.max(scrollTop, 0) / this.anchorItem.offset * this.anchorItem.index)
         this.startIndex = guesstimatedAnchorIndex >= this.bufferSize ? guesstimatedAnchorIndex - this.bufferSize : guesstimatedAnchorIndex
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
         this.upperHeight = this.bufferHeight.upperPlaceholderHeight
+        this.underHeight -= this.anchorItem.offset - scrollTop
       }
       this.next()
     }
+  }
+
+  /**
+ * if slide down(eg. slide 52 to 51, scrollThroughItemCount is positive), upperHeight equals to state.upperHeight.
+ * if slide up(eg. slide 52 to 53, scrollThroughItemCount is negative), upperHeight equals to current scrollTop.
+ * then upperHeight minus scrollThroughItemDistance, we can get the actural height which should be render.
+ * @param cache cached anchor position
+ * @param height upperHeight
+ * 
+ */
+  public computeUpperPlaceholderHeight(): number {
+    const scrollTop = this.scrollerDom.scrollTop
+    const prevStartIndex = this.anchorItem.index >= this.bufferSize ? this.anchorItem.index - this.bufferSize! : 0
+    const scrollThroughItemCount = prevStartIndex - this.startIndex
+    const prevStartItem = this.cachedItemRect[prevStartIndex]
+    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.upperHeight : scrollTop
+    const endIndex = prevStartItem ? prevStartIndex : this.startIndex + this.bufferSize
+    const scrollThroughItem = this.cachedItemRect.slice(this.startIndex, endIndex)
+    const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
+    return upperHeight - scrollThroughItemDistance
   }
 
   public subscribe(callback: Callback) {
