@@ -2,7 +2,7 @@
  *  Projector.
  *  used for calculate anchor and new items
  */
-import { InfiniteScroller } from "./scroller"
+import { BufferHeight } from "./scroller"
 
 export class Projector {
   public startIndex = 0
@@ -12,19 +12,32 @@ export class Projector {
   private callback: Callback
   private guesstimatedItemCountPerPage: number
   private displayCount: number
-  private scrollerDom: HTMLDivElement
   private upperHeight = 0
 
   constructor(
-    public scroller: InfiniteScroller,
-    public items: any[],
-    public averageHeight: number,
+    private scrollerDom: HTMLDivElement,
+    private bufferHeight: BufferHeight,
+    private bufferSize = 0,
+    private items: any[],
+    private averageHeight: number,
     public cachedItemRect = [] as Cache[]
   ) {
-    this.scrollerDom = scroller.divDom
     this.guesstimatedItemCountPerPage = Math.ceil(this.scrollerDom.clientHeight / averageHeight)
-    this.displayCount = this.guesstimatedItemCountPerPage + 3
+    this.displayCount = this.guesstimatedItemCountPerPage + this.bufferSize
     this.endIndex = this.startIndex + this.displayCount - 1
+  }
+
+  public guesstRestBottomHeight() {
+    const cachedItemRectLength = this.cachedItemRect.length
+    const endIndex = cachedItemRectLength === 0 ? this.endIndex : cachedItemRectLength
+    const bottomCountDelta = this.items.length - endIndex
+    const unCachedItemCount = bottomCountDelta < 0 ? 0 : bottomCountDelta
+    const lastCachedItemRect = this.cachedItemRect[cachedItemRectLength - 1]
+    const lastCachedItemRectBottom = lastCachedItemRect ? lastCachedItemRect.bottom : 0
+    const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex]
+    const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0
+    const underPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight
+    return underPlaceholderHeight
   }
 
   public next(items?: any[]) {
@@ -36,17 +49,10 @@ export class Projector {
     const needAdjustment = startItem ? false : true
     const upperPlaceholderHeight = startItem ? startItem.top : this.upperHeight
 
-    const cachedItemRectLength = this.cachedItemRect.length
-    const endIndex = cachedItemRectLength === 0 ? this.endIndex : cachedItemRectLength
-    const bottomCountDelta = this.items.length - endIndex
-    const unCachedItemCount = bottomCountDelta < 0 ? 0 : bottomCountDelta
-    const lastCachedItemRect = this.cachedItemRect[cachedItemRectLength - 1]
-    const lastCachedItemRectBottom = lastCachedItemRect ? lastCachedItemRect.bottom : 0
-    const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex]
-    const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0
-    const underPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight
+    const underHeight = this.bufferHeight.underPlaceholderHeight === 0 ? this.guesstRestBottomHeight() : this.bufferHeight.underPlaceholderHeight
 
-    this.callback(projectedItems, upperPlaceholderHeight, underPlaceholderHeight, needAdjustment)
+
+    this.callback(projectedItems, upperPlaceholderHeight, underHeight, needAdjustment)
   }
 
   /**
@@ -59,7 +65,7 @@ export class Projector {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
       if (nextAnchorItem) {
         const nextAnchorIndex = nextAnchorItem.index
-        this.startIndex = nextAnchorIndex > 2 ? nextAnchorIndex - 3 : 0
+        this.startIndex = nextAnchorIndex >= this.bufferSize ? nextAnchorIndex - this.bufferSize : 0
         this.endIndex = this.startIndex + this.displayCount - 1
         this.anchorItem.index = nextAnchorIndex
         this.anchorItem.offset = nextAnchorItem.top
@@ -67,7 +73,7 @@ export class Projector {
         const cachedItemLength = this.cachedItemRect.length
         const unCachedDelta = scrollTop - this.cachedItemRect[cachedItemLength - 1].bottom
         const guesstimatedUnCachedCount = Math.ceil(unCachedDelta / this.averageHeight)
-        this.startIndex = this.endIndex + guesstimatedUnCachedCount - 3
+        this.startIndex = this.endIndex + guesstimatedUnCachedCount - this.bufferSize
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
         this.upperHeight = scrollTop
@@ -82,20 +88,19 @@ export class Projector {
   public down = () => {
     const scrollTop = this.scrollerDom.scrollTop
     if (scrollTop < this.anchorItem.offset) {
-      const startItem = this.cachedItemRect[this.startIndex]
-      const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)
-      const nextStartIndex = nextAnchorItem.index - 3
-      if (this.cachedItemRect[nextStartIndex > 0 ? nextStartIndex : 0]) {
-        this.startIndex = nextAnchorItem.index > 2 ? nextAnchorItem.index - 3 : 0
+      const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)!
+      const nextStartIndex = nextAnchorItem.index - this.bufferSize
+      if (this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
+        this.startIndex = nextAnchorItem.index >= this.bufferSize ? nextAnchorItem.index - this.bufferSize : 0
         this.endIndex = this.startIndex + this.displayCount - 1
         this.anchorItem.index = nextAnchorItem.index
         this.anchorItem.offset = nextAnchorItem.top
       } else {
         const guesstimatedAnchorIndex = Math.floor(Math.max(scrollTop, 0) / this.anchorItem.offset * this.anchorItem.index)
-        this.startIndex = guesstimatedAnchorIndex > 2 ? guesstimatedAnchorIndex - 3 : guesstimatedAnchorIndex
+        this.startIndex = guesstimatedAnchorIndex >= this.bufferSize ? guesstimatedAnchorIndex - this.bufferSize : guesstimatedAnchorIndex
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
-        this.upperHeight = this.scroller.state.upperPlaceholderHeight
+        this.upperHeight = this.bufferHeight.upperPlaceholderHeight
       }
       this.next()
     }

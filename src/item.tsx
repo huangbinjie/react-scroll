@@ -1,13 +1,14 @@
 import * as React from "react"
-import { Projector } from "./projector"
+import { Projector, Cache } from "./projector"
+import { BufferHeight } from "./scroller"
 
 export type Props = {
+  bufferHeight: BufferHeight
   item: any
   itemIndex: number
-  measure: () => void
+  measure: (upperHeight?: number, underHeight?: number) => void
   needAdjustment: boolean
   onRenderCell: (item: any, index: number, measure: () => void) => React.ReactNode
-  upperPlaceholderHeight: number
   projector: Projector
 }
 
@@ -30,12 +31,12 @@ export class Item extends React.Component<Props> {
 
   public render() {
     return <div ref={div => this.dom = div!}>
-      {this.props.onRenderCell(this.props.item, this.props.itemIndex, this.props.measure)}
+      {this.props.onRenderCell(this.props.item, this.props.itemIndex, this.measure)}
     </div>
   }
 
   public setCache = (props: Props, itemIndex: number) => {
-    const { projector, upperPlaceholderHeight, needAdjustment } = props
+    const { projector, bufferHeight } = props
     const cachedItemRect = projector.cachedItemRect
     const curItem = cachedItemRect[itemIndex]
     const prevItem = cachedItemRect[itemIndex - 1]
@@ -48,9 +49,36 @@ export class Item extends React.Component<Props> {
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     } else {
       // if previous item doesn't exist, it's the first item, so upperHeight equals upperPlaceholderHeight
-      const bottom = upperPlaceholderHeight + rect.height
-      const top = upperPlaceholderHeight
+      const bottom = bufferHeight.upperPlaceholderHeight + rect.height
+      const top = bufferHeight.upperPlaceholderHeight
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     }
   }
+
+  public measure = () => {
+    const { itemIndex, projector, bufferHeight } = this.props
+    const cachedItemRect = projector.cachedItemRect[itemIndex]
+    const curItemRect = this.dom.getBoundingClientRect()
+    if (cachedItemRect && curItemRect.height !== cachedItemRect.height) {
+      const anchorIndex = projector.anchorItem.index
+      const delta = curItemRect.height - cachedItemRect.height
+      let upperHeight, underHeight
+      if (itemIndex <= anchorIndex) {
+        upperHeight = bufferHeight.upperPlaceholderHeight - delta
+        underHeight = bufferHeight.underPlaceholderHeight
+        if (upperHeight < 0) {
+          upperHeight = bufferHeight.upperPlaceholderHeight
+        }
+      } else {
+        upperHeight = bufferHeight.upperPlaceholderHeight
+        underHeight = bufferHeight.underPlaceholderHeight - delta
+        if (underHeight < 0) {
+          underHeight = bufferHeight.underPlaceholderHeight
+        }
+      }
+      // console.log(anchorIndex, itemIndex, delta, bufferHeight.upperPlaceholderHeight, upperHeight, bufferHeight.underPlaceholderHeight, underHeight)
+      this.props.measure(upperHeight, underHeight)
+    }
+  }
+
 }

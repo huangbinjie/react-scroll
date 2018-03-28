@@ -14,12 +14,13 @@ type State = {
 class App extends React.Component<{}, State> {
   state: State = { innerHeight: window.innerHeight, messages: [] }
   componentDidMount() {
-    // fetchDataWithImageAndText().then(messages => this.setState({ messages }))
-    fetchDataWithText().then(messages => this.setState({ messages }))
+    fetchDataWithImageAndText().then(messages => this.setState({ messages }))
+    // fetchDataWithText().then(messages => this.setState({ messages }))
   }
   render() {
     return (
       <InfiniteScroller
+        bufferSize={3}
         itemAverageHeight={66}
         containerHeight={this.state.innerHeight}
         items={this.state.messages}
@@ -30,15 +31,21 @@ class App extends React.Component<{}, State> {
     )
   }
 
-  renderCell(item: any, index: number, measure: () => void) {
+  renderCell = (item: any, index: number, measure: () => void) => {
     return <li key={index} style={{ listStyle: "none" }}>
       <div><span style={{ color: "red" }}>{index}</span>{item.content}</div>
-      {item.image ? <img onLoad={measure} src={item.image} style={{ maxWidth: "100%" }} /> : null}
+      {item.image ? <img onLoad={this.onImageLoad(item, measure)} src={item.image} style={{ display: item.shouldRemeasure ? "none" : "block" }} /> : null}
     </li>
   }
 
+  onImageLoad = (item: any, measure: () => void) => (event: React.SyntheticEvent<HTMLImageElement>) => {
+    event.currentTarget.style.display = "block"
+    measure()
+    item.shouldRemeasure = false
+  }
+
   onEnd = () => {
-    fetchDataWithText().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
+    fetchDataWithImageAndText().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
   }
 }
 

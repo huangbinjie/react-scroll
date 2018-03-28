@@ -9,26 +9,34 @@ export function fetchDataWithText() {
 
 export function fetchDataWithImageAndText() {
   const content = genContent()
-  const responseData = Array(100).fill(0).map(() => ({ id: generate(), content: genContent(), image: genImage(!!content) }))
+  const responseData = Array(100).fill(0).map(() => {
+    const image = genImage(!!content)
+    return { id: generate(), content: genContent(), image, shouldRemeasure: !!image }
+  })
   return Promise.resolve(responseData)
 }
 
 function genContent(): string | null {
-  if (Math.random() > 0.2) return faker.lorem.paragraph()
+  if (Math.random() > 0.1) return faker.lorem.paragraph()
   return null
 }
 
 function genImage(hasContent: boolean): string | null {
   if (hasContent) {
-    if (Math.random() > 0.8) {
-      const imageWidth = Math.round(Math.random() * 1000)
-      const imageHeight = Math.round(Math.random() * 1000)
-      const url = `https://fillmurray.com/${imageWidth}/${imageHeight}`
+    if (Math.random() > 0.5) {
+      // return faker.image.image()
+      const imageWidth = Math.round(Math.random() * 375)
+      const imageHeight = Math.round(Math.random() * 200)
+      const url = `https://www.fillmurray.com/${imageWidth}/${imageHeight}`
       return url
     }
     return null
   } else {
-    return faker.image.image()
+    // return faker.image.image()
+    const imageWidth = Math.round(Math.random() * 375)
+    const imageHeight = Math.round(Math.random() * 200)
+    const url = `https://www.fillmurray.com/${imageWidth}/${imageHeight}`
+    return url
   }
 }
 
