@@ -147,15 +147,14 @@ export class InfiniteScroller extends React.Component<Props, State> {
   public measure = (itemIndex: number, delta: number) => {
     this.projector.cachedItemRect.length = 0
     let upperHeight, underHeight
-    if (itemIndex <= this.projector.anchorItem.index) {
-      const restUpperHeight = this.bufferHeight.upperPlaceholderHeight - delta
-      if (restUpperHeight < 0) {
+    if (itemIndex < this.projector.anchorItem.index) {
+      if (this.bufferHeight.upperPlaceholderHeight === 0) {
         upperHeight = 0
         this.upperDom.style.height = upperHeight + "px"
-        const nextScrollTop = this.divDom.scrollTop + restUpperHeight
+        const nextScrollTop = this.divDom.scrollTop + delta
         this.compatibleScrollTo(nextScrollTop)
       } else {
-        upperHeight = restUpperHeight
+        upperHeight = this.bufferHeight.upperPlaceholderHeight - delta
         this.upperDom.style.height = upperHeight + "px"
       }
       underHeight = this.bufferHeight.underPlaceholderHeight
@@ -215,9 +214,9 @@ export class InfiniteScroller extends React.Component<Props, State> {
     this.isAdjusting = true
     const cachedItemRect = this.projector.cachedItemRect
     const startIndex = this.projector.startIndex
-    const finalHeight = this.computeUpperPlaceholderHeight(this.bufferHeight.upperPlaceholderHeight)
+    const finalHeight = this.projector.computeVirtualUpperHeight()
     const scrollTop = this.divDom.scrollTop
-    this.bufferHeight.upperPlaceholderHeight = startIndex === 0 ? 0 : finalHeight < 0 ? 0 : finalHeight
+    this.bufferHeight.upperPlaceholderHeight = this.projector.computeActualUpperHeight(finalHeight)
     this.setState({}, () => {
       if (startIndex > 0) {
         if (this.isMeasuring) {

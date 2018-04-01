@@ -47,11 +47,9 @@ export class Projector {
     const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
     const startItem = this.cachedItemRect[this.startIndex]
     // there are two case should adjust: 1、resize。2、quickly slipping。
-    const needAdjustment = startItem ? false : true
-    // const upperPlaceholderHeight = startItem ? startItem.top : this.upperHeight
+    const needAdjustment = this.items.length === 0 ? false : startItem ? false : true
 
     const underHeight = this.underHeight <= 0 ? this.guesstRestBottomHeight() : this.underHeight
-
 
     this.callback(projectedItems, this.upperHeight, underHeight, needAdjustment)
   }
@@ -122,16 +120,40 @@ export class Projector {
  * @param height upperHeight
  * 
  */
-  public computeUpperPlaceholderHeight(): number {
+  public computeVirtualUpperHeight(): number {
     const scrollTop = this.scrollerDom.scrollTop
     const prevStartIndex = this.anchorItem.index >= this.bufferSize ? this.anchorItem.index - this.bufferSize! : 0
     const scrollThroughItemCount = prevStartIndex - this.startIndex
     const prevStartItem = this.cachedItemRect[prevStartIndex]
-    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.upperHeight : scrollTop
+    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.bufferHeight.upperPlaceholderHeight : scrollTop
     const endIndex = prevStartItem ? prevStartIndex : this.startIndex + this.bufferSize
     const scrollThroughItem = this.cachedItemRect.slice(this.startIndex, endIndex)
     const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
     return upperHeight - scrollThroughItemDistance
+  }
+
+  public computeActualUpperHeight(virtualUpperHeight: number) {
+    this.upperHeight = this.startIndex === 0 ? 0 : virtualUpperHeight < 0 ? 0 : virtualUpperHeight
+    return this.upperHeight
+  }
+
+  public updatePlaceholderHeight(upperHeight: number, underHeight: number) {
+    this.upperHeight = upperHeight
+    this.underHeight = underHeight
+  }
+
+  public measure(itemIndex: number, delta: number) {
+    this.cachedItemRect.length = 0
+    if (itemIndex < this.anchorItem.index) {
+      if (this.upperHeight === 0) {
+        this.upperHeight = 0
+      } else {
+        this.upperHeight -= delta
+      }
+    } else {
+      this.underHeight = this.underHeight - delta
+    }
+    this.next()
   }
 
   public subscribe(callback: Callback) {
