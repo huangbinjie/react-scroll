@@ -2,22 +2,19 @@
  *  Projector.
  *  used for calculate anchor and new items
  */
-import { BufferHeight } from "./scroller"
-
 export class Projector {
   public startIndex = 0
   public endIndex = 0
   public anchorItem = { index: 0, offset: 0 }
+  public upperHeight = 0
+  public underHeight = 0
 
   private callback: Callback = () => { }
   private guesstimatedItemCountPerPage: number
   private displayCount: number
-  private upperHeight = 0
-  private underHeight = 0
 
   constructor(
     private scrollerDom: HTMLDivElement,
-    private bufferHeight: BufferHeight,
     private bufferSize = 0,
     private items: any[],
     private averageHeight: number,
@@ -38,6 +35,7 @@ export class Projector {
     const lastItemRect = this.endIndex >= cachedItemRectLength ? this.cachedItemRect[cachedItemRectLength - 1] : this.cachedItemRect[this.endIndex]
     const lastItemRectBottom = lastItemRect ? lastItemRect.bottom : 0
     const underPlaceholderHeight = lastCachedItemRectBottom - lastItemRectBottom + unCachedItemCount * this.averageHeight
+    this.underHeight = underPlaceholderHeight
     return underPlaceholderHeight
   }
 
@@ -105,7 +103,7 @@ export class Projector {
         this.startIndex = guesstimatedAnchorIndex >= this.bufferSize ? guesstimatedAnchorIndex - this.bufferSize : guesstimatedAnchorIndex
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
-        this.upperHeight = this.bufferHeight.upperPlaceholderHeight
+        this.upperHeight = this.upperHeight
         this.underHeight -= this.anchorItem.offset - scrollTop
       }
       this.next()
@@ -125,7 +123,7 @@ export class Projector {
     const prevStartIndex = this.anchorItem.index >= this.bufferSize ? this.anchorItem.index - this.bufferSize! : 0
     const scrollThroughItemCount = prevStartIndex - this.startIndex
     const prevStartItem = this.cachedItemRect[prevStartIndex]
-    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.bufferHeight.upperPlaceholderHeight : scrollTop
+    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.upperHeight : scrollTop
     const endIndex = prevStartItem ? prevStartIndex : this.startIndex + this.bufferSize
     const scrollThroughItem = this.cachedItemRect.slice(this.startIndex, endIndex)
     const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
@@ -144,16 +142,21 @@ export class Projector {
 
   public measure(itemIndex: number, delta: number) {
     this.cachedItemRect.length = 0
+    let shouldUpdateScrollTop = false
     if (itemIndex < this.anchorItem.index) {
       if (this.upperHeight === 0) {
-        this.upperHeight = 0
+        shouldUpdateScrollTop = true
       } else {
         this.upperHeight -= delta
       }
     } else {
       this.underHeight = this.underHeight - delta
     }
-    this.next()
+    return {
+      upperHeight: this.upperHeight,
+      underHeight: this.underHeight,
+      shouldUpdateScrollTop: shouldUpdateScrollTop
+    }
   }
 
   public subscribe(callback: Callback) {

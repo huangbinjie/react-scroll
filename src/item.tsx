@@ -1,10 +1,8 @@
 import * as React from "react"
 import { addListener, removeListener } from "resize-detector"
 import { Projector, Cache } from "./projector"
-import { BufferHeight } from "./scroller"
 
 export type Props = {
-  bufferHeight: BufferHeight
   item: any
   itemIndex: number
   measure: (itemIndex: number, delta: number) => void
@@ -42,7 +40,7 @@ export class Item extends React.Component<Props> {
   }
 
   public setCache = (props: Props, itemIndex: number) => {
-    const { projector, bufferHeight } = props
+    const { projector } = props
     const cachedItemRect = projector.cachedItemRect
     const curItem = cachedItemRect[itemIndex]
     const prevItem = cachedItemRect[itemIndex - 1]
@@ -55,14 +53,14 @@ export class Item extends React.Component<Props> {
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     } else {
       // if previous item doesn't exist, it's the first item, so upperHeight equals upperPlaceholderHeight
-      const bottom = bufferHeight.upperPlaceholderHeight + rect.height
-      const top = bufferHeight.upperPlaceholderHeight
+      const bottom = projector.upperHeight + rect.height
+      const top = projector.underHeight
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     }
   }
 
   public measure = () => {
-    const { itemIndex, projector, bufferHeight } = this.props
+    const { itemIndex, projector } = this.props
     const cachedItemRect = projector.cachedItemRect[itemIndex]
     const curItemRect = this.dom.getBoundingClientRect()
     if (cachedItemRect && curItemRect.height !== cachedItemRect.height) {

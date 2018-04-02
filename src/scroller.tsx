@@ -22,7 +22,9 @@ export type Props<> = {
 }
 
 export type State = {
-  projectedItems: any[]
+  projectedItems: any[],
+  upperPlaceholderHeight: number
+  underPlaceholderHeight: number
 }
 
 export type BufferHeight = {
@@ -37,13 +39,13 @@ export class InfiniteScroller extends React.Component<Props, State> {
     onScroll: () => { },
     onEnd: () => { }
   }
-  public state: State = { projectedItems: [] }
+  public state: State = { projectedItems: [], upperPlaceholderHeight: 0, underPlaceholderHeight: 0 }
   public divDom!: HTMLDivElement
   public upperDom!: HTMLDivElement
   public underDom!: HTMLDivElement
   public needAdjustment = false
   public isAdjusting = false
-  public bufferHeight = { upperPlaceholderHeight: 0, underPlaceholderHeight: 0 }
+  // public bufferHeight = { upperPlaceholderHeight: 0, underPlaceholderHeight: 0 }
 
   private hasBottomTouched = true
   private scrollTop = 0
@@ -87,7 +89,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
    */
   public componentDidMount() {
     this.width = this.divDom.clientWidth
-    this.projector = new Projector(this.divDom, this.bufferHeight, this.props.bufferSize!!!, this.props.items, this.props.itemAverageHeight, this.props.cache)
+    this.projector = new Projector(this.divDom, this.props.bufferSize!, this.props.items, this.props.itemAverageHeight, this.props.cache)
     this.projector.subscribe((projectedItems, upperPlaceholderHeight, underPlaceholderHeight, needAdjustment) => {
       this.needAdjustment = needAdjustment
       if (underPlaceholderHeight < this.divDom.clientHeight && !this.hasBottomTouched) {
@@ -95,9 +97,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
         this.props.onEnd!()
       }
       const prevStateItemsLength = this.state.projectedItems.length
-      this.bufferHeight.upperPlaceholderHeight = upperPlaceholderHeight
-      this.bufferHeight.underPlaceholderHeight = underPlaceholderHeight
-      this.setState({ projectedItems }, () => {
+      this.setState({ projectedItems, upperPlaceholderHeight, underPlaceholderHeight }, () => {
         if (prevStateItemsLength === 0 && projectedItems.length > 0) {
           this.divDom.scrollTop = this.props.initialScrollTop!
         }
@@ -126,7 +126,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
     }
     return (
       <div className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
-        <div ref={div => this.upperDom = div!} style={{ height: this.bufferHeight.upperPlaceholderHeight }}></div>
+        <div ref={div => this.upperDom = div!} style={{ height: this.state.upperPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) =>
           <Item
             key={this.props.itemKey ? item[this.props.itemKey] : index}
@@ -135,43 +135,50 @@ export class InfiniteScroller extends React.Component<Props, State> {
             measure={this.measure}
             needAdjustment={this.needAdjustment}
             itemIndex={this.projector.startIndex + index}
-            bufferHeight={this.bufferHeight}
             onRenderCell={this.props.onRenderCell}
           />
         )}
-        <div ref={div => this.underDom = div!} style={{ height: this.bufferHeight.underPlaceholderHeight }}></div>
+        <div ref={div => this.underDom = div!} style={{ height: this.state.underPlaceholderHeight }}></div>
       </div>
     )
   }
 
   public measure = (itemIndex: number, delta: number) => {
+    // const { upperHeight, underHeight, shouldUpdateScrollTop } = this.projector.measure(itemIndex, delta)
+    // if (shouldUpdateScrollTop) {
+    //   const nextScrollTop = this.divDom.scrollTop + delta
+    //   this.compatibleScrollTo(nextScrollTop)
+    // }
+    // this.upperDom.style.height = upperHeight + "px"
+    // this.underDom.style.height = underHeight + "px"
+
     this.projector.cachedItemRect.length = 0
     let upperHeight, underHeight
     if (itemIndex < this.projector.anchorItem.index) {
-      if (this.bufferHeight.upperPlaceholderHeight === 0) {
+      if (this.state.upperPlaceholderHeight === 0) {
         upperHeight = 0
         this.upperDom.style.height = upperHeight + "px"
         const nextScrollTop = this.divDom.scrollTop + delta
         this.compatibleScrollTo(nextScrollTop)
       } else {
-        upperHeight = this.bufferHeight.upperPlaceholderHeight - delta
+        upperHeight = this.state.upperPlaceholderHeight - delta
         this.upperDom.style.height = upperHeight + "px"
       }
-      underHeight = this.bufferHeight.underPlaceholderHeight
+      underHeight = this.state.underPlaceholderHeight
       this.underDom.style.height = underHeight + "px"
     } else {
-      const restUnderHeight = this.bufferHeight.underPlaceholderHeight - delta
-      upperHeight = this.bufferHeight.upperPlaceholderHeight
+      const restUnderHeight = this.state.underPlaceholderHeight - delta
+      upperHeight = this.state.upperPlaceholderHeight
       underHeight = restUnderHeight
       this.upperDom.style.height = upperHeight + "px"
       this.underDom.style.height = underHeight + "px"
     }
-    this.bufferHeight.upperPlaceholderHeight = upperHeight
-    this.bufferHeight.underPlaceholderHeight = underHeight
+    // this.bufferHeight.upperPlaceholderHeight = upperHeight
+    // this.bufferHeight.underPlaceholderHeight = underHeight
     this.needAdjustment = true
     this.isAdjusting = false
-    // console.log(JSON.parse(JSON.stringify(this.projector.cachedItemRect)))
-    this.setState({})
+    // // console.log(JSON.parse(JSON.stringify(this.projector.cachedItemRect)))
+    this.setState({ upperPlaceholderHeight: upperHeight, underPlaceholderHeight: underHeight })
   }
 
   /**
@@ -216,8 +223,8 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const startIndex = this.projector.startIndex
     const finalHeight = this.projector.computeVirtualUpperHeight()
     const scrollTop = this.divDom.scrollTop
-    this.bufferHeight.upperPlaceholderHeight = this.projector.computeActualUpperHeight(finalHeight)
-    this.setState({}, () => {
+    const upperPlaceholderHeight = this.projector.computeActualUpperHeight(finalHeight)
+    this.setState({ upperPlaceholderHeight }, () => {
       if (startIndex > 0) {
         if (this.isMeasuring) {
           this.keepScrollTopWithinAnchor()
