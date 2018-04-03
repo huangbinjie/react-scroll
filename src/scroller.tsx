@@ -73,23 +73,13 @@ export class InfiniteScroller extends React.Component<Props, State> {
     }
   }
 
-  protected resizeHandler = () => {
-    if (this.divDom.clientWidth !== this.width) {
-      this.width = this.divDom.clientWidth
-      this.projector.cachedItemRect.length = 0
-      this.isMeasuring = true
-      this.needAdjustment = true
-      this.isAdjusting = false
-      this.setState({})
-    }
-  }
-
   /**
    * first mount: get the native dom
    */
   public componentDidMount() {
     this.width = this.divDom.clientWidth
-    this.projector = new Projector(this.divDom, this.props.bufferSize!, this.props.items, this.props.itemAverageHeight, this.props.cache)
+    const guesstimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / this.props.itemAverageHeight)
+    this.projector = new Projector(guesstimatedItemCountPerPage, this.props.bufferSize!, this.props.items, this.props.itemAverageHeight, this.props.cache)
     this.projector.subscribe((projectedItems, upperPlaceholderHeight, underPlaceholderHeight, needAdjustment) => {
       this.needAdjustment = needAdjustment
       if (underPlaceholderHeight < this.divDom.clientHeight && !this.hasBottomTouched) {
@@ -110,11 +100,11 @@ export class InfiniteScroller extends React.Component<Props, State> {
       this.projector.next()
     }
 
-    window.addEventListener("resize", this.resizeHandler)
+    // window.addEventListener("resize", this.resizeHandler)
   }
 
   public componentWillUnmount() {
-    window.removeEventListener("resize", this.resizeHandler)
+    // window.removeEventListener("resize", this.resizeHandler)
   }
 
   public render() {
@@ -144,40 +134,16 @@ export class InfiniteScroller extends React.Component<Props, State> {
   }
 
   public measure = (itemIndex: number, delta: number) => {
-    // const { upperHeight, underHeight, shouldUpdateScrollTop } = this.projector.measure(itemIndex, delta)
-    // if (shouldUpdateScrollTop) {
-    //   const nextScrollTop = this.divDom.scrollTop + delta
-    //   this.compatibleScrollTo(nextScrollTop)
-    // }
-    // this.upperDom.style.height = upperHeight + "px"
-    // this.underDom.style.height = underHeight + "px"
-
-    this.projector.cachedItemRect.length = 0
-    let upperHeight, underHeight
-    if (itemIndex < this.projector.anchorItem.index) {
-      if (this.state.upperPlaceholderHeight === 0) {
-        upperHeight = 0
-        this.upperDom.style.height = upperHeight + "px"
-        const nextScrollTop = this.divDom.scrollTop + delta
-        this.compatibleScrollTo(nextScrollTop)
-      } else {
-        upperHeight = this.state.upperPlaceholderHeight - delta
-        this.upperDom.style.height = upperHeight + "px"
-      }
-      underHeight = this.state.underPlaceholderHeight
-      this.underDom.style.height = underHeight + "px"
-    } else {
-      const restUnderHeight = this.state.underPlaceholderHeight - delta
-      upperHeight = this.state.upperPlaceholderHeight
-      underHeight = restUnderHeight
-      this.upperDom.style.height = upperHeight + "px"
-      this.underDom.style.height = underHeight + "px"
+    const { upperHeight, underHeight } = this.projector.measure(itemIndex, delta)
+    this.upperDom.style.height = upperHeight + "px"
+    this.underDom.style.height = underHeight + "px"
+    if (upperHeight === 0) {
+      const nextScrollTop = this.divDom.scrollTop + delta
+      this.compatibleScrollTo(nextScrollTop)
     }
-    // this.bufferHeight.upperPlaceholderHeight = upperHeight
-    // this.bufferHeight.underPlaceholderHeight = underHeight
+    this.projector.cachedItemRect.length = 0
     this.needAdjustment = true
     this.isAdjusting = false
-    // // console.log(JSON.parse(JSON.stringify(this.projector.cachedItemRect)))
     this.setState({ upperPlaceholderHeight: upperHeight, underPlaceholderHeight: underHeight })
   }
 
@@ -219,27 +185,23 @@ export class InfiniteScroller extends React.Component<Props, State> {
    */
   public adjustUpperPlaceholderHieght() {
     this.isAdjusting = true
+    const scrollTop = this.divDom.scrollTop
     const cachedItemRect = this.projector.cachedItemRect
     const startIndex = this.projector.startIndex
-    const finalHeight = this.projector.computeVirtualUpperHeight()
-    const scrollTop = this.divDom.scrollTop
+    const finalHeight = this.projector.computeVirtualUpperHeight(scrollTop)
     const upperPlaceholderHeight = this.projector.computeActualUpperHeight(finalHeight)
     this.setState({ upperPlaceholderHeight }, () => {
       if (startIndex > 0) {
-        if (this.isMeasuring) {
-          this.keepScrollTopWithinAnchor()
-          this.isMeasuring = false
+        if (finalHeight < 0) {
+          this.compatibleScrollTo(scrollTop - finalHeight)
+          this.projector.findAnchorFromCaches(scrollTop - finalHeight)
         } else {
-          if (finalHeight < 0) {
-            this.compatibleScrollTo(scrollTop - finalHeight)
-          }
+          this.projector.findAnchorFromCaches(scrollTop)
         }
       } else {
         this.compatibleScrollTo(scrollTop - finalHeight)
+        this.projector.findAnchorFromCaches(scrollTop - finalHeight)
       }
-
-      this.projector.anchorItem = { index: startIndex + this.props.bufferSize!, offset: cachedItemRect[startIndex + this.props.bufferSize!].top }
-      // console.log(startIndex, this.projector.anchorItem)
     })
   }
 
@@ -270,10 +232,10 @@ export class InfiniteScroller extends React.Component<Props, State> {
     this.props.onScroll!(this.divDom)
     if (newScrollTop < this.scrollTop) {
       // scroll down, viewport up
-      this.projector.down()
+      this.projector.down(newScrollTop)
     } else if (newScrollTop > this.scrollTop) {
       // scroll up, viewport down
-      this.projector.up()
+      this.projector.up(newScrollTop)
     }
     this.scrollTop = newScrollTop
   }

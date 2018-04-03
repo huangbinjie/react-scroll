@@ -3,7 +3,7 @@ import { generate } from "shortid"
 import * as faker from "faker"
 
 export function fetchDataWithText() {
-  const data = Array(50).fill(0).map(() => ({ id: generate(), content: faker.lorem.paragraph() }))
+  const data = Array(100).fill(0).map(() => ({ id: generate(), content: faker.lorem.paragraph() }))
   return Promise.resolve(data)
 }
 

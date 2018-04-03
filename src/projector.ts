@@ -10,17 +10,16 @@ export class Projector {
   public underHeight = 0
 
   private callback: Callback = () => { }
-  private guesstimatedItemCountPerPage: number
   private displayCount: number
+  private shouldAdjust = false
 
   constructor(
-    private scrollerDom: HTMLDivElement,
+    private guesstimatedItemCountPerPage: number,
     private bufferSize = 0,
     private items: any[],
     private averageHeight: number,
     public cachedItemRect = [] as Cache[]
   ) {
-    this.guesstimatedItemCountPerPage = Math.ceil(this.scrollerDom.clientHeight / averageHeight)
     this.displayCount = this.guesstimatedItemCountPerPage + this.bufferSize
     this.endIndex = this.startIndex + this.displayCount - 1
   }
@@ -39,26 +38,22 @@ export class Projector {
     return underPlaceholderHeight
   }
 
-  public next(items?: any[]) {
+  public next = (items?: any[]) => {
+    console.log(3)
     if (items) this.items = items
 
     const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
-    const startItem = this.cachedItemRect[this.startIndex]
-    // there are two case should adjust: 1、resize。2、quickly slipping。
-    const needAdjustment = this.items.length === 0 ? false : startItem ? false : true
 
     const underHeight = this.underHeight <= 0 ? this.guesstRestBottomHeight() : this.underHeight
 
-    this.callback(projectedItems, this.upperHeight, underHeight, needAdjustment)
+    this.callback(projectedItems, this.upperHeight, underHeight, this.shouldAdjust)
   }
 
   /**
    * hands up, viewport down.
    */
-  public up = () => {
-    const scrollTop = this.scrollerDom.scrollTop
-    const anchorItemRect = this.cachedItemRect[this.anchorItem.index]
-    if (scrollTop > anchorItemRect.bottom) {
+  public up = (scrollTop: number) => {
+    if (scrollTop > this.anchorItem.offset) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
       if (nextAnchorItem) {
         const nextAnchorIndex = nextAnchorItem.index
@@ -69,6 +64,7 @@ export class Projector {
         this.underHeight -= nextAnchorOffset - this.anchorItem.offset
         this.anchorItem.index = nextAnchorIndex
         this.anchorItem.offset = nextAnchorOffset
+        this.shouldAdjust = false
       } else {
         const cachedItemLength = this.cachedItemRect.length
         const unCachedDelta = scrollTop - this.cachedItemRect[cachedItemLength - 1].bottom
@@ -78,6 +74,7 @@ export class Projector {
         this.cachedItemRect.length = 0
         this.upperHeight = scrollTop
         this.underHeight -= this.anchorItem.offset - scrollTop
+        this.shouldAdjust = true
       }
       this.next()
     }
@@ -86,9 +83,9 @@ export class Projector {
   /**
    * hands down, viewport up.
    */
-  public down = () => {
-    const scrollTop = this.scrollerDom.scrollTop
+  public down = (scrollTop: number) => {
     if (scrollTop < this.anchorItem.offset) {
+      console.log(2)
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)!
       const nextStartIndex = nextAnchorItem.index - this.bufferSize
       if (nextStartIndex < this.anchorItem.index && this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
@@ -98,6 +95,7 @@ export class Projector {
         this.anchorItem.offset = nextAnchorItem.top
         this.upperHeight = this.cachedItemRect[this.startIndex].top
         this.underHeight -= nextAnchorItem.top - this.anchorItem.offset
+        this.shouldAdjust = false
       } else {
         const guesstimatedAnchorIndex = Math.floor(Math.max(scrollTop, 0) / this.anchorItem.offset * this.anchorItem.index)
         this.startIndex = guesstimatedAnchorIndex >= this.bufferSize ? guesstimatedAnchorIndex - this.bufferSize : guesstimatedAnchorIndex
@@ -105,6 +103,7 @@ export class Projector {
         this.cachedItemRect.length = 0
         this.upperHeight = this.upperHeight
         this.underHeight -= this.anchorItem.offset - scrollTop
+        this.shouldAdjust = true
       }
       this.next()
     }
@@ -118,8 +117,7 @@ export class Projector {
  * @param height upperHeight
  * 
  */
-  public computeVirtualUpperHeight(): number {
-    const scrollTop = this.scrollerDom.scrollTop
+  public computeVirtualUpperHeight(scrollTop: number): number {
     const prevStartIndex = this.anchorItem.index >= this.bufferSize ? this.anchorItem.index - this.bufferSize! : 0
     const scrollThroughItemCount = prevStartIndex - this.startIndex
     const prevStartItem = this.cachedItemRect[prevStartIndex]
@@ -135,28 +133,28 @@ export class Projector {
     return this.upperHeight
   }
 
-  public updatePlaceholderHeight(upperHeight: number, underHeight: number) {
-    this.upperHeight = upperHeight
-    this.underHeight = underHeight
+  public findAnchorFromCaches(scrollTop: number) {
+    const anchor = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)!
+    this.anchorItem.index = anchor.index
+    this.anchorItem.offset = anchor.top
   }
 
-  public measure(itemIndex: number, delta: number) {
-    this.cachedItemRect.length = 0
-    let shouldUpdateScrollTop = false
+  public measure = (itemIndex: number, delta: number) => {
     if (itemIndex < this.anchorItem.index) {
       if (this.upperHeight === 0) {
-        shouldUpdateScrollTop = true
+        this.upperHeight = 0
       } else {
         this.upperHeight -= delta
       }
     } else {
-      this.underHeight = this.underHeight - delta
+      this.underHeight -= delta
     }
+
     return {
       upperHeight: this.upperHeight,
-      underHeight: this.underHeight,
-      shouldUpdateScrollTop: shouldUpdateScrollTop
+      underHeight: this.underHeight
     }
+
   }
 
   public subscribe(callback: Callback) {

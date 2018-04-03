@@ -12,7 +12,8 @@ export type Props = {
 }
 
 export class Item extends React.Component<Props> {
-  public dom!: HTMLDivElement
+  private dom!: HTMLDivElement
+  private previousHeight?: number
 
   public componentWillReceiveProps(nextProps: Props) {
     if (nextProps.needAdjustment) {
@@ -42,7 +43,6 @@ export class Item extends React.Component<Props> {
   public setCache = (props: Props, itemIndex: number) => {
     const { projector } = props
     const cachedItemRect = projector.cachedItemRect
-    const curItem = cachedItemRect[itemIndex]
     const prevItem = cachedItemRect[itemIndex - 1]
 
     const rect = this.dom.getBoundingClientRect()
@@ -54,8 +54,14 @@ export class Item extends React.Component<Props> {
     } else {
       // if previous item doesn't exist, it's the first item, so upperHeight equals upperPlaceholderHeight
       const bottom = projector.upperHeight + rect.height
-      const top = projector.underHeight
+      const top = projector.upperHeight
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
+    }
+
+    if (this.previousHeight) {
+
+    } else {
+      this.previousHeight = rect.height
     }
   }
 
@@ -63,26 +69,12 @@ export class Item extends React.Component<Props> {
     const { itemIndex, projector } = this.props
     const cachedItemRect = projector.cachedItemRect[itemIndex]
     const curItemRect = this.dom.getBoundingClientRect()
-    if (cachedItemRect && curItemRect.height !== cachedItemRect.height) {
-      const anchorIndex = projector.anchorItem.index
-      const delta = curItemRect.height - cachedItemRect.height
-      // let upperHeight, underHeight
-      // if (itemIndex <= anchorIndex) {
-      //   upperHeight = bufferHeight.upperPlaceholderHeight - delta
-      //   underHeight = bufferHeight.underPlaceholderHeight
-      //   // if (upperHeight <= 0) {
-      //   //   upperHeight *= -1
-      //   // }
-      // } else {
-      //   upperHeight = bufferHeight.upperPlaceholderHeight
-      //   underHeight = bufferHeight.underPlaceholderHeight - delta
-      //   // if (underHeight <= 0) {
-      //   //   underHeight *= -1
-      //   // }
-      // }
-      // console.log(anchorIndex, itemIndex, delta, bufferHeight.upperPlaceholderHeight, upperHeight, bufferHeight.underPlaceholderHeight, underHeight)
-      this.props.measure(itemIndex, delta)
-    }
+    // if (cachedItemRect && curItemRect.height !== cachedItemRect.height) {
+    // const anchorIndex = projector.anchorItem.index
+    const delta = curItemRect.height - (this.previousHeight || 0)
+    this.previousHeight = curItemRect.height
+    this.props.measure(itemIndex, delta)
+    // }
   }
 
 }
