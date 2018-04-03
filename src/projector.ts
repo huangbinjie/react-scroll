@@ -1,3 +1,5 @@
+import { debug } from "util";
+
 /**
  *  Projector.
  *  used for calculate anchor and new items
@@ -39,7 +41,6 @@ export class Projector {
   }
 
   public next = (items?: any[]) => {
-    console.log(3)
     if (items) this.items = items
 
     const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
@@ -56,15 +57,17 @@ export class Projector {
     if (scrollTop > this.anchorItem.offset) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
       if (nextAnchorItem) {
-        const nextAnchorIndex = nextAnchorItem.index
-        const nextAnchorOffset = nextAnchorItem.top
-        this.startIndex = nextAnchorIndex >= this.bufferSize ? nextAnchorIndex - this.bufferSize : 0
-        this.endIndex = this.startIndex + this.displayCount - 1
-        this.upperHeight = this.cachedItemRect[this.startIndex].top
-        this.underHeight -= nextAnchorOffset - this.anchorItem.offset
-        this.anchorItem.index = nextAnchorIndex
-        this.anchorItem.offset = nextAnchorOffset
-        this.shouldAdjust = false
+        if (nextAnchorItem.index > this.anchorItem.index) {
+          const nextAnchorIndex = nextAnchorItem.index
+          const nextAnchorOffset = nextAnchorItem.top
+          this.startIndex = nextAnchorIndex >= this.bufferSize ? nextAnchorIndex - this.bufferSize : 0
+          this.endIndex = this.startIndex + this.displayCount - 1
+          this.upperHeight = this.cachedItemRect[this.startIndex].top
+          this.underHeight -= nextAnchorOffset - this.anchorItem.offset
+          this.anchorItem.index = nextAnchorIndex
+          this.anchorItem.offset = nextAnchorOffset
+          this.shouldAdjust = false
+        }
       } else {
         const cachedItemLength = this.cachedItemRect.length
         const unCachedDelta = scrollTop - this.cachedItemRect[cachedItemLength - 1].bottom
@@ -85,7 +88,6 @@ export class Projector {
    */
   public down = (scrollTop: number) => {
     if (scrollTop < this.anchorItem.offset) {
-      console.log(2)
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)!
       const nextStartIndex = nextAnchorItem.index - this.bufferSize
       if (nextStartIndex < this.anchorItem.index && this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
@@ -113,15 +115,14 @@ export class Projector {
  * if slide down(eg. slide 52 to 51, scrollThroughItemCount is positive), upperHeight equals to state.upperHeight.
  * if slide up(eg. slide 52 to 53, scrollThroughItemCount is negative), upperHeight equals to current scrollTop.
  * then upperHeight minus scrollThroughItemDistance, we can get the actural height which should be render.
- * @param cache cached anchor position
- * @param height upperHeight
+ * @param scrollTop
  * 
  */
-  public computeVirtualUpperHeight(scrollTop: number): number {
+  public computeVirtualUpperHeight(scrollTop: number, height: number): number {
     const prevStartIndex = this.anchorItem.index >= this.bufferSize ? this.anchorItem.index - this.bufferSize! : 0
     const scrollThroughItemCount = prevStartIndex - this.startIndex
     const prevStartItem = this.cachedItemRect[prevStartIndex]
-    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? this.upperHeight : scrollTop
+    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? height : scrollTop
     const endIndex = prevStartItem ? prevStartIndex : this.startIndex + this.bufferSize
     const scrollThroughItem = this.cachedItemRect.slice(this.startIndex, endIndex)
     const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
@@ -140,7 +141,7 @@ export class Projector {
   }
 
   public measure = (itemIndex: number, delta: number) => {
-    if (itemIndex < this.anchorItem.index) {
+    if (itemIndex <= this.anchorItem.index) {
       if (this.upperHeight === 0) {
         this.upperHeight = 0
       } else {

@@ -100,11 +100,6 @@ export class InfiniteScroller extends React.Component<Props, State> {
       this.projector.next()
     }
 
-    // window.addEventListener("resize", this.resizeHandler)
-  }
-
-  public componentWillUnmount() {
-    // window.removeEventListener("resize", this.resizeHandler)
   }
 
   public render() {
@@ -137,32 +132,14 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const { upperHeight, underHeight } = this.projector.measure(itemIndex, delta)
     this.upperDom.style.height = upperHeight + "px"
     this.underDom.style.height = underHeight + "px"
-    if (upperHeight === 0) {
+    if (upperHeight === 0 && this.projector.anchorItem.index !== 0) {
       const nextScrollTop = this.divDom.scrollTop + delta
       this.compatibleScrollTo(nextScrollTop)
     }
     this.projector.cachedItemRect.length = 0
     this.needAdjustment = true
-    this.isAdjusting = false
+    this.isAdjusting = true
     this.setState({ upperPlaceholderHeight: upperHeight, underPlaceholderHeight: underHeight })
-  }
-
-  /**
-   * During resizing and remeasuring, items should be minimal flicker,
-   * so we need to keep scrollTop within anchor item.
-   */
-  public keepScrollTopWithinAnchor() {
-    const anchorOffset = this.projector.anchorItem.offset
-    const currentAnchor = this.projector.cachedItemRect[this.projector.startIndex + this.props.bufferSize!]
-    const anchorDelta = anchorOffset - currentAnchor.top
-    const nextScrollTop = this.divDom.scrollTop - anchorDelta
-    if (nextScrollTop < currentAnchor.top) {
-      this.compatibleScrollTo(currentAnchor.top)
-    } else if (nextScrollTop > currentAnchor.bottom) {
-      this.compatibleScrollTo(currentAnchor.bottom)
-    } else {
-      this.compatibleScrollTo(nextScrollTop)
-    }
   }
 
   /**
@@ -188,7 +165,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const scrollTop = this.divDom.scrollTop
     const cachedItemRect = this.projector.cachedItemRect
     const startIndex = this.projector.startIndex
-    const finalHeight = this.projector.computeVirtualUpperHeight(scrollTop)
+    const finalHeight = this.projector.computeVirtualUpperHeight(scrollTop, this.state.upperPlaceholderHeight)
     const upperPlaceholderHeight = this.projector.computeActualUpperHeight(finalHeight)
     this.setState({ upperPlaceholderHeight }, () => {
       if (startIndex > 0) {
@@ -203,28 +180,6 @@ export class InfiniteScroller extends React.Component<Props, State> {
         this.projector.findAnchorFromCaches(scrollTop - finalHeight)
       }
     })
-  }
-
-
-  /**
-   * if slide down(eg. slide 52 to 51, scrollThroughItemCount is positive), upperHeight equals to state.upperHeight.
-   * if slide up(eg. slide 52 to 53, scrollThroughItemCount is negative), upperHeight equals to current scrollTop.
-   * then upperHeight minus scrollThroughItemDistance, we can get the actural height which should be render.
-   * @param cache cached anchor position
-   * @param height upperHeight
-   * 
-   */
-  public computeUpperPlaceholderHeight(height: number): number {
-    const projector = this.projector
-    const scrollTop = this.divDom.scrollTop
-    const prevStartIndex = projector.anchorItem.index >= this.props.bufferSize! ? projector.anchorItem.index - this.props.bufferSize! : 0
-    const scrollThroughItemCount = prevStartIndex - projector.startIndex
-    const prevStartItem = projector.cachedItemRect[prevStartIndex]
-    const upperHeight = scrollThroughItemCount < 0 ? scrollTop : prevStartItem ? height : scrollTop
-    const endIndex = prevStartItem ? prevStartIndex : projector.startIndex + this.props.bufferSize!
-    const scrollThroughItem = projector.cachedItemRect.slice(projector.startIndex, endIndex)
-    const scrollThroughItemDistance = scrollThroughItem.reduce((acc, item) => acc + item.height, 0)
-    return upperHeight - scrollThroughItemDistance
   }
 
   public onScroll = () => {

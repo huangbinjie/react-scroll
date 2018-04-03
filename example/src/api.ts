@@ -9,7 +9,7 @@ export function fetchDataWithText() {
 
 export function fetchDataWithImageAndText() {
   const content = genContent()
-  const responseData = Array(100).fill(0).map(() => {
+  const responseData = Array(1).fill(0).map(() => {
     const image = genImage(!!content)
     return { id: generate(), content: genContent(), image }
   })
@@ -26,7 +26,7 @@ function genImage(hasContent: boolean): string | null {
     if (Math.random() > 0.5) {
       // return faker.image.image()
       const imageWidth = Math.round(Math.random() * 375)
-      const imageHeight = Math.round(Math.random() * 200)
+      const imageHeight = Math.round(Math.random() * 500)
       const url = `https://picsum.photos/${imageWidth}/${imageHeight}`
       return url
     }
@@ -34,7 +34,7 @@ function genImage(hasContent: boolean): string | null {
   } else {
     // return faker.image.image()
     const imageWidth = Math.round(Math.random() * 375)
-    const imageHeight = Math.round(Math.random() * 200)
+    const imageHeight = Math.round(Math.random() * 500)
     const url = `https://picsum.photos/${imageWidth}/${imageHeight}`
     return url
   }

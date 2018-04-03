@@ -20,7 +20,7 @@ class App extends React.Component<{}, State> {
   render() {
     return (
       <InfiniteScroller
-        bufferSize={1}
+        bufferSize={3}
         itemAverageHeight={66}
         containerHeight={this.state.innerHeight}
         items={this.state.messages}
