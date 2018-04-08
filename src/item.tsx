@@ -13,7 +13,7 @@ export type Props = {
 
 export class Item extends React.Component<Props> {
   private dom!: HTMLDivElement
-  private previousHeight?: number
+  private previousMeasuredHeight?: number
 
   public componentWillReceiveProps(nextProps: Props) {
     if (nextProps.needAdjustment) {
@@ -58,21 +58,20 @@ export class Item extends React.Component<Props> {
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     }
 
-    if (this.previousHeight) {
-
-    } else {
-      this.previousHeight = rect.height
+    if (!this.previousMeasuredHeight) {
+      this.previousMeasuredHeight = rect.height
     }
   }
 
   public measure = () => {
     const { itemIndex, projector } = this.props
-    const cachedItemRect = projector.cachedItemRect[itemIndex]
+    // const previousHeight = projector.cachedItemRect[itemIndex].height
     const curItemRect = this.dom.getBoundingClientRect()
     // if (cachedItemRect && curItemRect.height !== cachedItemRect.height) {
     // const anchorIndex = projector.anchorItem.index
-    const delta = curItemRect.height - (this.previousHeight || 0)
-    this.previousHeight = curItemRect.height
+    const delta = curItemRect.height - (this.previousMeasuredHeight || 0)
+    // console.log(itemIndex, curItemRect.height, this.previousMeasuredHeight, delta)
+    this.previousMeasuredHeight = curItemRect.height !== this.previousMeasuredHeight ? curItemRect.height : this.previousMeasuredHeight
     this.props.measure(itemIndex, delta)
     // }
   }

@@ -14,14 +14,14 @@ type State = {
 class App extends React.Component<{}, State> {
   state: State = { innerHeight: window.innerHeight, messages: [] }
   componentDidMount() {
-    fetchDataWithImageAndText().then(messages => this.setState({ messages }))
-    // fetchDataWithText().then(messages => this.setState({ messages }))
+    // fetchDataWithImageAndText().then(messages => this.setState({ messages }))
+    fetchDataWithText().then(messages => this.setState({ messages }))
   }
   render() {
     return (
       <InfiniteScroller
         bufferSize={3}
-        itemAverageHeight={66}
+        itemAverageHeight={44}
         containerHeight={this.state.innerHeight}
         items={this.state.messages}
         itemKey="id"

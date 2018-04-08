@@ -6,6 +6,7 @@
 import * as React from "react"
 import { Projector, Cache } from "./projector"
 import { Item } from "./item"
+const debounce = require("lodash.debounce")
 
 export type Props<> = {
   bufferSize?: number
@@ -110,7 +111,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
       height: this.props.containerHeight
     }
     return (
-      <div className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
+      <div id="c" className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
         <div ref={div => this.upperDom = div!} style={{ height: this.state.upperPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) =>
           <Item
@@ -132,14 +133,24 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const { upperHeight, underHeight } = this.projector.measure(itemIndex, delta)
     this.upperDom.style.height = upperHeight + "px"
     this.underDom.style.height = underHeight + "px"
-    if (upperHeight === 0 && this.projector.anchorItem.index !== 0) {
-      const nextScrollTop = this.divDom.scrollTop + delta
-      this.compatibleScrollTo(nextScrollTop)
-    }
+    // if (upperHeight === 0 && this.projector.anchorItem.index !== 0) {
+    //   const nextScrollTop = this.divDom.scrollTop + delta
+    //   this.compatibleScrollTo(nextScrollTop)
+    // }
+    // if (itemIndex < this.projector.anchorItem.index && upperHeight === 0) {
+    //   const nextScrollTop = this.divDom.scrollTop + delta
+    //   this.compatibleScrollTo(nextScrollTop)
+    // }
+    // this.projector.updateTheLaterItemCaches(itemIndex, delta)
+    // this.projector.findAnchorFromCaches(this.divDom.scrollTop)
+    // console.log(this.projector.anchorItem)
     this.projector.cachedItemRect.length = 0
     this.needAdjustment = true
     this.isAdjusting = true
-    this.setState({ upperPlaceholderHeight: upperHeight, underPlaceholderHeight: underHeight })
+    this.setState({ upperPlaceholderHeight: upperHeight, underPlaceholderHeight: underHeight }, () => {
+      const { index } = this.projector.anchorItem
+      this.projector.anchorItem.offset = this.projector.cachedItemRect[index].top
+    })
   }
 
   /**
@@ -171,15 +182,28 @@ export class InfiniteScroller extends React.Component<Props, State> {
       if (startIndex > 0) {
         if (finalHeight < 0) {
           this.compatibleScrollTo(scrollTop - finalHeight)
-          this.projector.findAnchorFromCaches(scrollTop - finalHeight)
+          console.log(111, finalHeight)
+          this.setAnchor()
         } else {
-          this.projector.findAnchorFromCaches(scrollTop)
+          console.log(222, finalHeight)
+          this.setAnchor()
         }
       } else {
+        console.log(333)
         this.compatibleScrollTo(scrollTop - finalHeight)
-        this.projector.findAnchorFromCaches(scrollTop - finalHeight)
+        this.setAnchor()
       }
+      // console.log(this.projector.anchorItem)
     })
+  }
+
+  public setAnchor() {
+    const { cachedItemRect, startIndex } = this.projector
+    if (cachedItemRect[startIndex + 3]) {
+      this.projector.anchorItem = { index: startIndex + 3, offset: cachedItemRect[startIndex + 3].top }
+    } else {
+      this.projector.findAnchorFromCaches(this.divDom.scrollTop)
+    }
   }
 
   public onScroll = () => {

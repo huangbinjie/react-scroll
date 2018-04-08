@@ -41,7 +41,10 @@ export class Projector {
   }
 
   public next = (items?: any[]) => {
-    if (items) this.items = items
+    if (items) {
+      this.items = items
+      this.guesstRestBottomHeight()
+    }
 
     const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
 
@@ -90,7 +93,7 @@ export class Projector {
     if (scrollTop < this.anchorItem.offset) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)!
       const nextStartIndex = nextAnchorItem.index - this.bufferSize
-      if (nextStartIndex < this.anchorItem.index && this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
+      if (this.shouldAdjust !== true && nextStartIndex < this.anchorItem.index && this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
         this.startIndex = nextAnchorItem.index >= this.bufferSize ? nextAnchorItem.index - this.bufferSize : 0
         this.endIndex = this.startIndex + this.displayCount - 1
         this.anchorItem.index = nextAnchorItem.index
@@ -100,12 +103,13 @@ export class Projector {
         this.shouldAdjust = false
       } else {
         const guesstimatedAnchorIndex = Math.floor(Math.max(scrollTop, 0) / this.anchorItem.offset * this.anchorItem.index)
-        this.startIndex = guesstimatedAnchorIndex >= this.bufferSize ? guesstimatedAnchorIndex - this.bufferSize : guesstimatedAnchorIndex
+        this.startIndex = guesstimatedAnchorIndex >= this.bufferSize ? guesstimatedAnchorIndex - this.bufferSize : 0
         this.endIndex = this.startIndex + this.displayCount - 1
         this.cachedItemRect.length = 0
         this.upperHeight = this.upperHeight
         this.underHeight -= this.anchorItem.offset - scrollTop
         this.shouldAdjust = true
+        console.log(guesstimatedAnchorIndex, this.startIndex, this.anchorItem.index, this.anchorItem.offset, this.upperHeight)
       }
       this.next()
     }
@@ -140,17 +144,27 @@ export class Projector {
     this.anchorItem.offset = anchor.top
   }
 
+  public updateTheLaterItemCaches(index: number, delta: number) {
+    this.cachedItemRect[index].height += delta
+    this.cachedItemRect[index].bottom += delta
+    for (let i = index + 1; i <= this.endIndex; i++) {
+      this.cachedItemRect[i].top += delta
+      this.cachedItemRect[i].bottom += delta
+    }
+  }
+
   public measure = (itemIndex: number, delta: number) => {
-    if (itemIndex <= this.anchorItem.index) {
+    if (itemIndex < this.anchorItem.index) {
       if (this.upperHeight === 0) {
         this.upperHeight = 0
       } else {
-        this.upperHeight -= delta
+        // const nextHeight = Math.max(this.upperHeight - delta, 0)
+        this.upperHeight = Math.max(this.upperHeight - delta, 0)
       }
     } else {
-      this.underHeight -= delta
+      this.underHeight = Math.max(this.underHeight - delta, 0)
     }
-
+    // console.log(this.upperHeight, delta)
     return {
       upperHeight: this.upperHeight,
       underHeight: this.underHeight
