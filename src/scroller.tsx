@@ -6,7 +6,6 @@
 import * as React from "react"
 import { Projector, Cache } from "./projector"
 import { Item } from "./item"
-const debounce = require("lodash.debounce")
 
 export type Props<> = {
   bufferSize?: number
@@ -182,18 +181,11 @@ export class InfiniteScroller extends React.Component<Props, State> {
       if (startIndex > 0) {
         if (finalHeight < 0) {
           this.compatibleScrollTo(scrollTop - finalHeight)
-          console.log(111, finalHeight)
-          this.setAnchor()
-        } else {
-          console.log(222, finalHeight)
-          this.setAnchor()
         }
       } else {
-        console.log(333)
         this.compatibleScrollTo(scrollTop - finalHeight)
-        this.setAnchor()
       }
-      // console.log(this.projector.anchorItem)
+      this.setAnchor()
     })
   }
 

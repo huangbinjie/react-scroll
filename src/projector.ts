@@ -14,6 +14,7 @@ export class Projector {
   private callback: Callback = () => { }
   private displayCount: number
   private shouldAdjust = false
+  private direction = "up"
 
   constructor(
     private guesstimatedItemCountPerPage: number,
@@ -57,8 +58,9 @@ export class Projector {
    * hands up, viewport down.
    */
   public up = (scrollTop: number) => {
+    this.direction = "up"
     if (scrollTop > this.anchorItem.offset) {
-      const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
+      const nextAnchorItem = this.cachedItemRect.find(item => item ? item.top > scrollTop : false)
       if (nextAnchorItem) {
         if (nextAnchorItem.index > this.anchorItem.index) {
           const nextAnchorIndex = nextAnchorItem.index
@@ -90,7 +92,8 @@ export class Projector {
    * hands down, viewport up.
    */
   public down = (scrollTop: number) => {
-    if (scrollTop < this.anchorItem.offset) {
+    this.direction = "down"
+    if (scrollTop < this.anchorItem.offset && this.anchorItem.index > this.bufferSize) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)!
       const nextStartIndex = nextAnchorItem.index - this.bufferSize
       if (this.shouldAdjust !== true && nextStartIndex < this.anchorItem.index && this.cachedItemRect[nextStartIndex >= 0 ? nextStartIndex : 0]) {
@@ -158,8 +161,13 @@ export class Projector {
       if (this.upperHeight === 0) {
         this.upperHeight = 0
       } else {
-        // const nextHeight = Math.max(this.upperHeight - delta, 0)
         this.upperHeight = Math.max(this.upperHeight - delta, 0)
+      }
+    } else if (itemIndex === this.anchorItem.index) {
+      if (this.direction === "down") {
+        this.upperHeight = Math.max(this.upperHeight - delta, 0)
+      } else {
+        this.underHeight = Math.max(this.underHeight - delta, 0)
       }
     } else {
       this.underHeight = Math.max(this.underHeight - delta, 0)

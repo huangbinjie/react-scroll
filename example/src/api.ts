@@ -26,7 +26,7 @@ function genImage(hasContent: boolean): string | null {
     if (Math.random() > 0.5) {
       // return faker.image.image()
       const imageWidth = Math.round(Math.random() * 375)
-      const imageHeight = Math.round(Math.random() * 500)
+      const imageHeight = Math.round(Math.random() * 100)
       const url = `https://picsum.photos/${imageWidth}/${imageHeight}`
       return url
     }
@@ -34,7 +34,7 @@ function genImage(hasContent: boolean): string | null {
   } else {
     // return faker.image.image()
     const imageWidth = Math.round(Math.random() * 375)
-    const imageHeight = Math.round(Math.random() * 500)
+    const imageHeight = Math.round(Math.random() * 100)
     const url = `https://picsum.photos/${imageWidth}/${imageHeight}`
     return url
   }
