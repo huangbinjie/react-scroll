@@ -14,8 +14,8 @@ type State = {
 class App extends React.Component<{}, State> {
   state: State = { innerHeight: window.innerHeight, messages: [] }
   componentDidMount() {
-    fetchDataWithImageAndText().then(messages => this.setState({ messages }))
-    // fetchDataWithText().then(messages => this.setState({ messages }))
+    // fetchDataWithImageAndText().then(messages => this.setState({ messages }))
+    fetchDataWithText().then(messages => this.setState({ messages }))
   }
   render() {
     return (

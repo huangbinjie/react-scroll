@@ -112,7 +112,6 @@ export class Projector {
         this.upperHeight = this.upperHeight
         this.underHeight -= this.anchorItem.offset - scrollTop
         this.shouldAdjust = true
-        console.log(guesstimatedAnchorIndex, this.startIndex, this.anchorItem.index, this.anchorItem.offset, this.upperHeight)
       }
       this.next()
     }
@@ -172,12 +171,15 @@ export class Projector {
     } else {
       this.underHeight = Math.max(this.underHeight - delta, 0)
     }
-    // console.log(this.upperHeight, delta)
     return {
       upperHeight: this.upperHeight,
       underHeight: this.underHeight
     }
 
+  }
+
+  public estimateUpperHeight() {
+    
   }
 
   public subscribe(callback: Callback) {
