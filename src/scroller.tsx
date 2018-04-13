@@ -6,8 +6,11 @@
 import * as React from "react"
 import { Projector, Cache } from "./projector"
 import { Item } from "./item"
+const debounce = require("lodash.debounce")
 
-export type Props<> = {
+const isIos = !!navigator.platform.match(/iPhone|iPod|iPad/)
+
+export type Props = {
   bufferSize?: number
   cache?: Cache[],
   containerHeight: number
@@ -27,11 +30,6 @@ export type State = {
   underPlaceholderHeight: number
 }
 
-export type BufferHeight = {
-  upperPlaceholderHeight: number
-  underPlaceholderHeight: number
-}
-
 export class InfiniteScroller extends React.Component<Props, State> {
   public static defaultProps = {
     bufferSize: 0,
@@ -45,13 +43,12 @@ export class InfiniteScroller extends React.Component<Props, State> {
   public underDom!: HTMLDivElement
   public needAdjustment = false
   public isAdjusting = false
-  // public bufferHeight = { upperPlaceholderHeight: 0, underPlaceholderHeight: 0 }
 
   private hasBottomTouched = true
   private scrollTop = 0
   private projector!: Projector
   private width = 0
-  private isMeasuring = false
+  private hasHeightChanged = false
 
   /**
    * tell projector to project while got asynchronous data
@@ -110,7 +107,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
       height: this.props.containerHeight
     }
     return (
-      <div id="c" className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
+      <div className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
         <div ref={div => this.upperDom = div!} style={{ height: this.state.upperPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) =>
           <Item
@@ -132,25 +129,29 @@ export class InfiniteScroller extends React.Component<Props, State> {
     const { upperHeight, underHeight } = this.projector.measure(itemIndex, delta)
     this.upperDom.style.height = upperHeight + "px"
     this.underDom.style.height = underHeight + "px"
-    // if (upperHeight === 0 && this.projector.anchorItem.index !== 0) {
-    //   const nextScrollTop = this.divDom.scrollTop + delta
-    //   this.compatibleScrollTo(nextScrollTop)
-    // }
-    // if (itemIndex < this.projector.anchorItem.index && upperHeight === 0) {
-    //   const nextScrollTop = this.divDom.scrollTop + delta
-    //   this.compatibleScrollTo(nextScrollTop)
-    // }
-    // this.projector.updateTheLaterItemCaches(itemIndex, delta)
-    // this.projector.findAnchorFromCaches(this.divDom.scrollTop)
-    // console.log(this.projector.anchorItem)
-    this.projector.cachedItemRect.length = 0
-    this.needAdjustment = true
-    this.isAdjusting = true
-    this.setState({ upperPlaceholderHeight: upperHeight, underPlaceholderHeight: underHeight }, () => {
-      const { index } = this.projector.anchorItem
-      this.projector.anchorItem.offset = this.projector.cachedItemRect[index].top
-    })
+    this.hasHeightChanged = true
+    if (upperHeight === 0 && this.projector.startIndex !== 0) {
+      this.compatibleScrollTo(this.divDom.scrollTop + delta)
+    }
+    this.projector.updateLaterItem(itemIndex, delta)
+    const previousAnchorIndex = this.projector.anchorItem.index
+    this.projector.setAnchorFromCaches(this.divDom.scrollTop)
+    const currentAnchorIndex = this.projector.anchorItem.index
+    if (previousAnchorIndex !== currentAnchorIndex) {
+      // this.keepScrollTopWithinAnchor()
+    }
+    // this.projector.resetAnchorFromCaches()
+    // console.log(this.projector)
+    // this.projector.cachedItemRect.length = 0
+    // this.needAdjustment = true
+    // this.isAdjusting = false
+    // this.debouncedMeasure()
+    // requestAnimationFrame(() => this.setState({}, () => this.setAnchor()))
+    // this.setState({}, () => {
+    //   this.setAnchor()
+    // })
   }
+
 
   /**
    * https://popmotion.io/blog/20170704-manually-set-scroll-while-ios-momentum-scroll-bounces/
@@ -180,22 +181,36 @@ export class InfiniteScroller extends React.Component<Props, State> {
     this.setState({ upperPlaceholderHeight }, () => {
       if (startIndex > 0) {
         if (finalHeight < 0) {
-          this.compatibleScrollTo(scrollTop - finalHeight)
+          if (isIos) {
+            const estimateHeight = this.projector.estimateUpperHeight()
+            this.upperDom.style.height = this.state.upperPlaceholderHeight + "px"
+            this.compatibleScrollTo(scrollTop - finalHeight)
+            this.needAdjustment = true
+            this.isAdjusting = true
+            this.setState({ upperPlaceholderHeight: this.state.upperPlaceholderHeight + estimateHeight }, () => {
+              this.projector.resetAnchorFromCaches()
+              this.compatibleScrollTo(scrollTop - finalHeight + estimateHeight)
+            })
+          } else {
+            this.compatibleScrollTo(scrollTop - finalHeight)
+          }
         }
       } else {
-        this.compatibleScrollTo(scrollTop - finalHeight)
+        if (finalHeight !== 0) {
+          this.compatibleScrollTo(scrollTop - finalHeight)
+        }
       }
       this.setAnchor()
     })
   }
 
   public setAnchor() {
-    const { cachedItemRect, startIndex } = this.projector
-    if (cachedItemRect[startIndex + 3]) {
-      this.projector.anchorItem = { index: startIndex + 3, offset: cachedItemRect[startIndex + 3].top }
-    } else {
-      this.projector.findAnchorFromCaches(this.divDom.scrollTop)
-    }
+    // const { cachedItemRect, startIndex } = this.projector
+    // if (cachedItemRect[startIndex + 3]) {
+    //   this.projector.anchorItem = { index: startIndex + 3, offset: cachedItemRect[startIndex + 3].top }
+    // } else {
+    this.projector.setAnchorFromCaches(this.divDom.scrollTop)
+    // }
   }
 
   public onScroll = () => {

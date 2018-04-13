@@ -44,7 +44,7 @@ export class Item extends React.Component<Props> {
     const { projector } = props
     const cachedItemRect = projector.cachedItemRect
     const prevItem = cachedItemRect[itemIndex - 1]
-
+    
     const rect = this.dom.getBoundingClientRect()
     if (prevItem) {
       // if previous item exists, use prevItem.bottom as the upperHeight
