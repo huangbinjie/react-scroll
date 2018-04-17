@@ -91,3 +91,5 @@ called after anchor had arrived bottom.
   item css.
 
 + Because of the [scroll bug](https://popmotion.io/blog/20170704-manually-set-scroll-while-ios-momentum-scroll-bounces/) in ios, if you suffered this problem, it's normally! However, I did some optimization for ios--avoid change scrollTop.
+
++ 2.x version is a bit heavy for dynamic height. If you can give your dynamic content a certain height, please use the version of 1.1.7.
