@@ -1,19 +1,17 @@
 import * as React from "react"
-import { addListener, removeListener } from "resize-detector"
-import { Projector, Cache } from "./projector"
+import { Projector } from "./projector"
 
 export type Props = {
   item: any
   itemIndex: number
-  measure: (itemIndex: number, delta: number) => void
   needAdjustment: boolean
-  onRenderCell: (item: any, index: number, measure: () => void) => React.ReactNode
+  onRenderCell: (item: any, index: number) => React.ReactNode
+  upperPlaceholderHeight: number
   projector: Projector
 }
 
 export class Item extends React.Component<Props> {
-  private dom!: HTMLDivElement
-  private previousMeasuredHeight?: number
+  public dom!: HTMLDivElement
 
   public componentWillReceiveProps(nextProps: Props) {
     if (nextProps.needAdjustment) {
@@ -27,22 +25,18 @@ export class Item extends React.Component<Props> {
 
   public componentDidMount() {
     this.setCache(this.props, this.props.itemIndex)
-    addListener(this.dom, this.measure)
-  }
-
-  public componentWillUnmount() {
-    removeListener(this.dom, this.measure)
   }
 
   public render() {
     return <div ref={div => this.dom = div!}>
-      {this.props.onRenderCell(this.props.item, this.props.itemIndex, this.measure)}
+      {this.props.onRenderCell(this.props.item, this.props.itemIndex)}
     </div>
   }
 
   public setCache = (props: Props, itemIndex: number) => {
-    const { projector } = props
+    const { projector, upperPlaceholderHeight, needAdjustment } = props
     const cachedItemRect = projector.cachedItemRect
+    const curItem = cachedItemRect[itemIndex]
     const prevItem = cachedItemRect[itemIndex - 1]
 
     const rect = this.dom.getBoundingClientRect()
@@ -53,22 +47,9 @@ export class Item extends React.Component<Props> {
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     } else {
       // if previous item doesn't exist, it's the first item, so upperHeight equals upperPlaceholderHeight
-      const bottom = projector.upperHeight + rect.height
-      const top = projector.upperHeight
+      const bottom = upperPlaceholderHeight + rect.height
+      const top = upperPlaceholderHeight
       cachedItemRect[itemIndex] = { index: itemIndex, top, bottom, height: rect.height }
     }
-
-    if (!this.previousMeasuredHeight) {
-      this.previousMeasuredHeight = rect.height
-    }
   }
-
-  public measure = () => {
-    const { itemIndex, projector } = this.props
-    const curItemRect = this.dom.getBoundingClientRect()
-    const delta = curItemRect.height - (this.previousMeasuredHeight || 0)
-    this.previousMeasuredHeight = curItemRect.height !== this.previousMeasuredHeight ? curItemRect.height : this.previousMeasuredHeight
-    this.props.measure(itemIndex, delta)
-  }
-
 }
