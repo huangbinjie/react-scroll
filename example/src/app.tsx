@@ -16,11 +16,11 @@ class App extends React.Component<{}, State> {
   componentDidMount() {
     fetchDataWithImageAndText().then(messages => this.setState({ messages }))
     // fetchDataWithText().then(messages => this.setState({ messages }))
+    // setInterval(() => fetchDataWithText().then(messages => this.setState({ messages })), 5000)
   }
   render() {
     return (
       <InfiniteScroller
-        bufferSize={3}
         itemAverageHeight={66}
         containerHeight={this.state.innerHeight}
         items={this.state.messages}
@@ -45,7 +45,8 @@ class App extends React.Component<{}, State> {
   }
 
   onEnd = () => {
-    // fetchDataWithImageAndText().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
+    fetchDataWithImageAndText().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
+    // fetchDataWithText().then(messages => this.setState({ messages }))
   }
 }
 

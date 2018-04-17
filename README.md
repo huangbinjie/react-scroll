@@ -4,7 +4,7 @@ An effective react infinite scroll container. inspired by twitter's [blog](http:
 
 ## Motivation
 
-As the pwa(progressive web app) becoming more popular, the performance and user experience are more and more important. And infinite scroll is almost the most important part within a pwa project. But i found the results by searching `react infinite scroller` on github are not my needs. Fortunately, I found this article of [twitter](https://medium.com/@paularmstrong/twitter-lite-and-high-performance-react-progressive-web-apps-at-scale-d28a00e780a3) on medium by chance. That's i want. So I tried to implement one.
+As the pwa(progressive web app) becoming more popular, the performance and user experience are more and more important. And infinite scroll is almost the most important part within a pwa project. But i found the results by searching `react infinite scroller` on github are not my needs. Fortunately, I found this article of [twitter](https://medium.com/@paularmstrong/twitter-lite-and-high-performance-react-progressive-web-apps-at-scale-d28a00e780a3) on medium by chance. That's i want. So I tried to make my own one.
 
 ## Install
 
@@ -29,21 +29,13 @@ return <InfiniteScroller
 
 ## Feature
 
-+ hight performance
-![performance](https://pic2.zhimg.com/80/v2-492eaef1b72348661339ce5d4fdaf953_hd.jpg)
-
 + infinite load
 + lazy load
 + dynamic height
-+ [pure component](https://pic3.zhimg.com/v2-b373e12909006ba6d79d6ed1a03519f5_b.gif)
-
-![pure_component](https://pic3.zhimg.com/v2-b373e12909006ba6d79d6ed1a03519f5_b.gif)
-+ [cache](https://pic3.zhimg.com/v2-284a990951aed1f6ec0fe739e4ad983c_b.gif)
-
-![cache](https://pic3.zhimg.com/v2-284a990951aed1f6ec0fe739e4ad983c_b.gif)
-+ [resize](https://pic1.zhimg.com/v2-d7c4e657c267bc5ee99f93f1d503ed66_b.gif)
-
-![resize](https://pic1.zhimg.com/v2-d7c4e657c267bc5ee99f93f1d503ed66_b.gif)
+  ![d](https://pic3.zhimg.com/v2-e769b234a500c9fc2cdb49a6af779a4b_b.gif)
++ pure component
++ cache
++ resize
 
 ## Online Demo
 
@@ -77,11 +69,11 @@ called when trying to render an item. if you want to force scroller to update ca
 
 ### cache(optional): Cache[]
 
-cache the position of rendered item. your might need provide this props when you want go back to the last place.
+cache the position of rendered item. your might need provide this prop when you want go back to the last place.
 
 ### initialScrollTop(optional): number
 
-set scroller's scrollTop to `initialScrollTop` after first render. if you had provied `cache` and `initialScrollTop`, your can get the last interface before unmount of scroller component.
+set scroller's scrollTop to `initialScrollTop` after first render. if you had provied `cache` and `initialScrollTop`, you can get the last interface before unmount of scroller component.
 
 ### onScroll(optional): (scrollerDom: HTMLDivElement) => void
 
@@ -90,3 +82,12 @@ called when scroller is scrolling.
 ### onEnd?: () => void
 
 called after anchor had arrived bottom.
+
+## Caveat
+
++ Your item which returned by `onRenderCell` will be wrapped by a div that used for calculation.
+
++ Because of the `getBoundingClientRect`, I can't get the margin size. So you should not use `margin` in your
+  item css.
+
++ Because of the [scroll bug](https://popmotion.io/blog/20170704-manually-set-scroll-while-ios-momentum-scroll-bounces/) in ios, if you suffered this problem, it's normally! However, I did some optimization for ios--avoid change scrollTop.

@@ -2,7 +2,6 @@
  *  Projector.
  *  used for calculate anchor and new items
  */
-const debounce = require("lodash.debounce")
 
 export class Projector {
   public startIndex = 0
@@ -45,6 +44,8 @@ export class Projector {
     if (items) {
       this.items = items
       this.guesstRestBottomHeight()
+      this.cachedItemRect.length = 0
+      this.shouldAdjust = true
     }
 
     const projectedItems = this.items.slice(this.startIndex, this.endIndex + 1)
@@ -59,14 +60,18 @@ export class Projector {
    */
   public up = (scrollTop: number) => {
     this.direction = "up"
-    if (this.cachedItemRect.length === 0) return
+    // if (this.cachedItemRect.length === 0) return
     if (scrollTop > this.anchorItem.bottom) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
       if (nextAnchorItem) {
         // if (nextAnchorItem.index > this.anchorItem.index) {
         this.startIndex = nextAnchorItem.index >= this.bufferSize ? nextAnchorItem.index - this.bufferSize : 0
         this.endIndex = this.startIndex + this.displayCount - 1
-        this.upperHeight = this.cachedItemRect[this.startIndex].top
+        try {
+          this.upperHeight = this.cachedItemRect[this.startIndex].top
+        } catch {
+          debugger
+        }
         this.underHeight -= nextAnchorItem.top - this.anchorItem.top
         this.anchorItem = nextAnchorItem
         this.shouldAdjust = false
@@ -92,7 +97,7 @@ export class Projector {
    */
   public down = (scrollTop: number) => {
     this.direction = "down"
-    if (this.cachedItemRect.length === 0) return
+    // if (this.cachedItemRect.length === 0) return
     if (scrollTop < this.anchorItem.top) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom >= scrollTop : false)!
       if (nextAnchorItem) {
@@ -154,8 +159,7 @@ export class Projector {
         this.upperHeight = Math.max(this.upperHeight - delta, 0)
       }
     } else if (itemIndex === this.anchorItem.index) {
-      // if anchor at 0, if delta is negetive, the upperHeight will big than 0.
-      // but upperHeight should be 0.
+      // if anchor at 0, should not adjust upperHeight
       if (this.direction === "down" && itemIndex !== 0) {
         this.upperHeight = Math.max(this.upperHeight - delta, 0)
       } else {
@@ -171,42 +175,24 @@ export class Projector {
 
   }
 
+  /**
+   * other way to update cache won't call setstate.
+   * @param startIndex 
+   * @param delta 
+   */
   public updateLaterItem(startIndex: number, delta: number) {
-    // this.shouldAdjust = true
     const displayItems = this.cachedItemRect.slice(this.startIndex, this.endIndex + 1)
     this.cachedItemRect.length = 0
     for (let i = this.startIndex; i <= this.endIndex; i++) {
       if (!displayItems[i - this.startIndex]) return
       const previousItemBottom = i === this.startIndex ? this.upperHeight : displayItems[i - this.startIndex - 1].bottom
-      // debugger
       this.cachedItemRect[i] = displayItems[i - this.startIndex]
       if (startIndex === i) {
         this.cachedItemRect[i].height += delta
       }
-      try {
-        this.cachedItemRect[i].top = previousItemBottom
-        this.cachedItemRect[i].bottom = previousItemBottom + this.cachedItemRect[i].height
-      } catch {
-        debugger
-      }
-
-      // try {
-      //   this.cachedItemRect[i] = displayItems[i - this.startIndex]
-      //   if (i === this.startIndex) {
-      //     this.cachedItemRect[i].top = this.upperHeight
-      //     this.cachedItemRect[i].bottom = this.upperHeight + this.cachedItemRect[i].height
-      //   } else {
-      //     this.cachedItemRect[i].top += delta
-      //     this.cachedItemRect[i].bottom += delta
-      //   }
-      //   if (i === startIndex) {
-      //     this.cachedItemRect[i].height += delta
-      //   }
-      // } catch {
-      //   debugger
-      // }
+      this.cachedItemRect[i].top = previousItemBottom
+      this.cachedItemRect[i].bottom = previousItemBottom + this.cachedItemRect[i].height
     }
-    // console.log(this.cachedItemRect)
   }
 
   public estimateUpperHeight() {

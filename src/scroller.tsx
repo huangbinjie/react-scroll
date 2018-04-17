@@ -6,12 +6,10 @@
 import * as React from "react"
 import { Projector, Cache } from "./projector"
 import { Item } from "./item"
-const debounce = require("lodash.debounce")
 
 const isIos = !!navigator.platform.match(/iPhone|iPod|iPad/)
 
 export type Props = {
-  bufferSize?: number
   cache?: Cache[],
   containerHeight: number
   itemAverageHeight: number
@@ -32,7 +30,8 @@ export type State = {
 
 export class InfiniteScroller extends React.Component<Props, State> {
   public static defaultProps = {
-    bufferSize: 0,
+    bufferSize: 3,
+    className: "",
     initialScrollTop: 0,
     onScroll: () => { },
     onEnd: () => { }
@@ -76,7 +75,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
   public componentDidMount() {
     this.width = this.divDom.clientWidth
     const guesstimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / this.props.itemAverageHeight)
-    this.projector = new Projector(guesstimatedItemCountPerPage, this.props.bufferSize!, this.props.items, this.props.itemAverageHeight, this.props.cache)
+    this.projector = new Projector(guesstimatedItemCountPerPage, 3, this.props.items, this.props.itemAverageHeight, this.props.cache)
     this.projector.subscribe((projectedItems, upperPlaceholderHeight, underPlaceholderHeight, needAdjustment) => {
       this.needAdjustment = needAdjustment
       if (underPlaceholderHeight < this.divDom.clientHeight && !this.hasBottomTouched) {
@@ -107,7 +106,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
       height: this.props.containerHeight
     }
     return (
-      <div className={this.props.className || ""} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
+      <div className={this.props.className!} ref={div => this.divDom = div!} style={style} onScroll={this.onScroll}>
         <div ref={div => this.upperDom = div!} style={{ height: this.state.upperPlaceholderHeight }}></div>
         {this.state.projectedItems.map((item, index) =>
           <Item
@@ -125,6 +124,10 @@ export class InfiniteScroller extends React.Component<Props, State> {
     )
   }
 
+  /**
+   * We expect the measure to be triggered after height has changed but before repain.
+   * Then we can adjust the upperHeight manully to keep no flicker.
+   */
   public measure = (itemIndex: number, delta: number) => {
     const { upperHeight, underHeight } = this.projector.measure(itemIndex, delta)
     this.upperDom.style.height = upperHeight + "px"
@@ -136,20 +139,8 @@ export class InfiniteScroller extends React.Component<Props, State> {
     this.projector.updateLaterItem(itemIndex, delta)
     const previousAnchorIndex = this.projector.anchorItem.index
     this.projector.setAnchorFromCaches(this.divDom.scrollTop)
-    const currentAnchorIndex = this.projector.anchorItem.index
-    if (previousAnchorIndex !== currentAnchorIndex) {
-      // this.keepScrollTopWithinAnchor()
-    }
-    // this.projector.resetAnchorFromCaches()
-    // console.log(this.projector)
-    // this.projector.cachedItemRect.length = 0
-    // this.needAdjustment = true
-    // this.isAdjusting = false
-    // this.debouncedMeasure()
-    // requestAnimationFrame(() => this.setState({}, () => this.setAnchor()))
-    // this.setState({}, () => {
-    //   this.setAnchor()
-    // })
+    // const currentAnchorIndex = this.projector.anchorItem.index
+    // this.keepScrollTopWithinAnchor(previousAnchorIndex)
   }
 
 
@@ -182,6 +173,9 @@ export class InfiniteScroller extends React.Component<Props, State> {
       if (startIndex > 0) {
         if (finalHeight < 0) {
           if (isIos) {
+            // because of the scroll bug in ios, if scroll up, but the upperHeight minus scrolledDistance is nagetive,
+            // to adjust scrollTop will cause the motivation to stop. To avoid this problem occurs sequently,
+            // we need to remeasure upperHeight if the device is ios.
             const estimateHeight = this.projector.estimateUpperHeight()
             this.upperDom.style.height = this.state.upperPlaceholderHeight + "px"
             this.compatibleScrollTo(scrollTop - finalHeight)
@@ -200,17 +194,23 @@ export class InfiniteScroller extends React.Component<Props, State> {
           this.compatibleScrollTo(scrollTop - finalHeight)
         }
       }
-      this.setAnchor()
+      this.projector.setAnchorFromCaches(this.divDom.scrollTop)
     })
   }
 
-  public setAnchor() {
-    // const { cachedItemRect, startIndex } = this.projector
-    // if (cachedItemRect[startIndex + 3]) {
-    //   this.projector.anchorItem = { index: startIndex + 3, offset: cachedItemRect[startIndex + 3].top }
-    // } else {
-    this.projector.setAnchorFromCaches(this.divDom.scrollTop)
-    // }
+  /**
+   * During resizing and remeasuring, items should be minimal flicker,
+   * so we need to keep scrollTop within anchor item.
+   */
+  public keepScrollTopWithinAnchor(prevAnchorIndex: number) {
+    const currentAnchor = this.projector.anchorItem
+    if (prevAnchorIndex > currentAnchor.index) {
+      this.compatibleScrollTo(this.projector.cachedItemRect[prevAnchorIndex].bottom)
+    } else if (prevAnchorIndex < currentAnchor.index) {
+      this.compatibleScrollTo(currentAnchor.top)
+    } else {
+
+    }
   }
 
   public onScroll = () => {

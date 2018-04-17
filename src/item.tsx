@@ -22,7 +22,7 @@ export class Item extends React.Component<Props> {
   }
 
   public shouldComponentUpdate(nextProps: Props) {
-    return this.props.itemIndex !== nextProps.itemIndex ? true : false
+    return this.props.itemIndex !== nextProps.itemIndex || this.props.item !== nextProps.item
   }
 
   public componentDidMount() {
@@ -44,7 +44,7 @@ export class Item extends React.Component<Props> {
     const { projector } = props
     const cachedItemRect = projector.cachedItemRect
     const prevItem = cachedItemRect[itemIndex - 1]
-    
+
     const rect = this.dom.getBoundingClientRect()
     if (prevItem) {
       // if previous item exists, use prevItem.bottom as the upperHeight
@@ -65,15 +65,10 @@ export class Item extends React.Component<Props> {
 
   public measure = () => {
     const { itemIndex, projector } = this.props
-    // const previousHeight = projector.cachedItemRect[itemIndex].height
     const curItemRect = this.dom.getBoundingClientRect()
-    // if (cachedItemRect && curItemRect.height !== cachedItemRect.height) {
-    // const anchorIndex = projector.anchorItem.index
     const delta = curItemRect.height - (this.previousMeasuredHeight || 0)
-    // console.log(itemIndex, curItemRect.height, this.previousMeasuredHeight, delta)
     this.previousMeasuredHeight = curItemRect.height !== this.previousMeasuredHeight ? curItemRect.height : this.previousMeasuredHeight
     this.props.measure(itemIndex, delta)
-    // }
   }
 
 }
