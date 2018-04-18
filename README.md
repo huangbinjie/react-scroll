@@ -63,7 +63,7 @@ identity of your data. help scroller implements `pure component`.
 
 As the twitter blog mentioned, averageHeight can help scroller to guesstimate the buffer height. Usually your item height.
 
-### onRenderCell(required): (item: any, itemIndex: number, measure: () => void) => ReactNode
+### onRenderCell(required): (item: any, itemIndex: number) => ReactNode
 
 called when trying to render an item. if you want to force scroller to update cache(eg. after image loaded), you can call this method.
 
