@@ -186,13 +186,15 @@ export class InfiniteScroller extends React.Component<Props, State> {
           } else {
             this.compatibleScrollTo(scrollTop - finalHeight)
           }
+        } else {
+
         }
       } else {
         if (finalHeight !== 0) {
           this.compatibleScrollTo(scrollTop - finalHeight)
         }
       }
-      this.projector.setAnchorFromCaches(this.divDom.scrollTop)
+      this.projector.setAnchorFromCaches(scrollTop)
     })
   }
 
