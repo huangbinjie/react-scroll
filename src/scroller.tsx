@@ -17,7 +17,7 @@ export type Props = {
   items: object[]
   itemKey: string
   initialScrollTop?: number
-  onRenderCell: (item?: object, index?: number, measure?: () => void) => React.ReactNode
+  onRenderCell: (item: object, index: number) => React.ReactNode
   onScroll?: (dom: HTMLDivElement) => void
   onEnd?: () => void
 }
@@ -47,7 +47,6 @@ export class InfiniteScroller extends React.Component<Props, State> {
   private scrollTop = 0
   private projector!: Projector
   private width = 0
-  private hasHeightChanged = false
 
   /**
    * tell projector to project while got asynchronous data
@@ -75,7 +74,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
   public componentDidMount() {
     this.width = this.divDom.clientWidth
     const guesstimatedItemCountPerPage = Math.ceil(this.divDom.clientHeight / this.props.itemAverageHeight)
-    this.projector = new Projector(guesstimatedItemCountPerPage, 3, this.props.items, this.props.itemAverageHeight, this.props.cache)
+    this.projector = new Projector(this.props.containerHeight, guesstimatedItemCountPerPage, 3, this.props.items, this.props.itemAverageHeight, this.props.cache)
     this.projector.subscribe((projectedItems, upperPlaceholderHeight, underPlaceholderHeight, needAdjustment) => {
       this.needAdjustment = needAdjustment
       if (underPlaceholderHeight < this.divDom.clientHeight && !this.hasBottomTouched) {
@@ -126,13 +125,12 @@ export class InfiniteScroller extends React.Component<Props, State> {
 
   /**
    * We expect the measure to be triggered after height has changed but before repain.
-   * Then we can adjust the upperHeight manully to keep no flicker.
+   * Then we can adjust the upperHeight manually to keep no flicker.
    */
   public measure = (itemIndex: number, delta: number) => {
     const { upperHeight, underHeight } = this.projector.measure(itemIndex, delta)
     this.upperDom.style.height = upperHeight + "px"
     this.underDom.style.height = underHeight + "px"
-    this.hasHeightChanged = true
     if (upperHeight === 0 && this.projector.startIndex !== 0) {
       this.compatibleScrollTo(this.divDom.scrollTop + delta)
     }
