@@ -31,7 +31,7 @@ class App extends React.Component<{}, State> {
     )
   }
 
-  renderCell = (item: any, index: number, measure: () => void) => {
+  renderCell = (item: any, index: number) => {
     return <li key={index} style={{ listStyle: "none" }}>
       <div><span style={{ color: "red" }}>{index}</span>{item.content}</div>
       {item.image ? <img src={item.image} /> : null}
