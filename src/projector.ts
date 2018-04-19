@@ -60,9 +60,6 @@ export class Projector {
    */
   public up = (scrollTop: number) => {
     this.direction = "up"
-    if (!this.anchorItem) {
-      debugger
-    }
     if (scrollTop > this.anchorItem.bottom) {
       const nextAnchorItem = this.cachedItemRect.find(item => item ? item.bottom > scrollTop : false)
       if (nextAnchorItem) {
