@@ -32,14 +32,14 @@ return <InfiniteScroller
 + infinite load
 + lazy load
 + dynamic height
-  ![d](https://pic3.zhimg.com/v2-e769b234a500c9fc2cdb49a6af779a4b_b.gif)
+  <img src="https://pic3.zhimg.com/v2-e769b234a500c9fc2cdb49a6af779a4b_b.gif">
 + pure component
 + cache
 + resize
 
 ## Online Demo
 
-please visite my [blog](http://www.corol.me/slack) and debug the dom, then you can see the all feature what i claimed:smile:
+[image_and_text](https://codesandbox.io/s/kmowxk6w83)
 
 ## Props
 
