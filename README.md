@@ -32,7 +32,7 @@ return <InfiniteScroller
 + infinite load
 + lazy load
 + dynamic height
-  <img src="https://pic3.zhimg.com/v2-e769b234a500c9fc2cdb49a6af779a4b_b.gif">
+  <img src="https://pic3.zhimg.com/v2-e769b234a500c9fc2cdb49a6af779a4b_b.gif?raw=true" width="200px">
 + pure component
 + cache
 + resize
