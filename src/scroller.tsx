@@ -53,7 +53,9 @@ export class InfiniteScroller extends React.Component<Props, State> {
    * @param nextProps 
    */
   public componentWillReceiveProps(nextProps: Props) {
-    this.hasBottomTouched = false
+    if (nextProps.items.length !== this.props.items.length) {
+      this.hasBottomTouched = false
+    }
     this.projector.next(nextProps.items)
   }
 
@@ -124,7 +126,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
   }
 
   /**
-   * We expect the measure to be triggered after height has changed but before repain.
+   * We expect the measure to be triggered after height has changed but before repainting.
    * Then we can adjust the upperHeight manually to keep no flicker.
    */
   public measure = (itemIndex: number, delta: number) => {

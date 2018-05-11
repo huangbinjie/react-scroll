@@ -45,7 +45,6 @@ export class Projector {
     if (items) {
       this.items = items
       this.guesstRestBottomHeight()
-      this.cachedItemRect.length = 0
       this.shouldAdjust = true
     }
 

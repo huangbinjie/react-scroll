@@ -45,8 +45,9 @@ class App extends React.Component<{}, State> {
   }
 
   onEnd = () => {
+    console.log("onEnd fired")
     fetchDataWithImageAndText().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
-    // fetchDataWithText().then(messages => this.setState({ messages }))
+    // fetchDataWithText().then(messages => this.setState({ messages: this.state.messages.concat(messages) }))
   }
 }
 
