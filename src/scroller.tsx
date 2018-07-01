@@ -7,15 +7,15 @@ import * as React from "react"
 import { Projector, Cache } from "./projector"
 import { Item } from "./item"
 
-export type Props<T= {}> = {
+export type Props = {
   cache?: Cache[],
   containerHeight: number
   itemAverageHeight: number
   className?: string
-  items: T[]
+  items: any[]
   itemKey: string
   initialScrollTop?: number
-  onRenderCell: (item?: T, index?: number, measure?: () => void) => React.ReactNode
+  onRenderCell: (item: any, index: number) => React.ReactNode
   onScroll?: (dom: HTMLDivElement) => void
   onEnd?: () => void
 }
