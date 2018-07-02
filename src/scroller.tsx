@@ -111,7 +111,7 @@ export class InfiniteScroller extends React.Component<Props, State> {
 
   public render() {
     const style = {
-      overflow: "scroll" as "scroll",
+      overflow: "auto" as "scroll",
       WebkitOverflowScrolling: "touch",
       overflowAnchor: "none",
       height: this.props.containerHeight
